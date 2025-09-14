@@ -2,7 +2,7 @@
 
 RimWorld mod that enhances the vanilla AI behavior in combat   
 
-🚧 This is WIP. I just started learning C# and RimWorld API 2 weeks ago as of writing this README, so if you have a better approach - pull requests and suggestions are welcome.
+🚧 **This is WIP.** I just started learning C# and RimWorld API 2 weeks ago as of writing this README, so if you have a better approach - pull requests and suggestions are welcome.
 If you encounter any issues, bugs or performance drops - let me know.
 ## Features
 
