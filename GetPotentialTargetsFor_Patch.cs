@@ -137,7 +137,7 @@ namespace BetterGrenadeHandling
 
                 if (AttackerToTargetBlacklist.TryGetTarget(attacker.thingIDNumber, out int badTarget))
                 {
-                    //Log.Message($"GETPOTENTIALTARGETSFOR {attacker.LabelShort} found in blacklist, target {badTarget}");
+                    Log.Message($"GETPOTENTIALTARGETSFOR {attacker.LabelShort} found in blacklist, target {badTarget}");
                     __result.RemoveAll(t => t == null || t.Thing.thingIDNumber == badTarget);
                 }
                 

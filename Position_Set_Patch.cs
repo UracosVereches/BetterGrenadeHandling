@@ -93,7 +93,7 @@ public static class Thing_Position_Set_Patch
                     blastradius = blastradius + 1f; //just adding 1 does the trick
                 }
 
-                //If grenadier's target is moved thing
+                //If grenadier's target is instance(moved thing)
                 if (__instance == target_thing)
                 {
                     List<Thing> things_in_blast = new List<Thing>();
@@ -118,7 +118,7 @@ public static class Thing_Position_Set_Patch
                     continue;
                 }
 
-                //Everything below - if instance is ally
+                //Everything below - if instance(moved thing) is ally
 
                 IntVec3 moved_thing_pos = value;
 
