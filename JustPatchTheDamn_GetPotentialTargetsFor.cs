@@ -12,6 +12,7 @@ namespace BetterGrenadeHandling
     public static class AttackerToTargetBlacklist
     {
         public static readonly Dictionary<int, int> attacker_and_target = new Dictionary<int, int>();
+        public static readonly Dictionary<int, int> target_and_attacker = new Dictionary<int, int>();
         public static readonly Dictionary<int, int> collateral_and_attacker = new Dictionary<int, int>();
 
         //attacker_and_target[attacker][target]
@@ -34,6 +35,7 @@ namespace BetterGrenadeHandling
                 return;
             }
             attacker_and_target[attacker] = target;
+            target_and_attacker[target] = attacker;
             collateral_and_attacker[collateral] = attacker;
             //Log.Message(collateral_and_attacker[collateral].LabelShort);
         }
@@ -46,17 +48,30 @@ namespace BetterGrenadeHandling
 
         public static void TryRemoveByCollateral(int collateral)
         {
-            //Log.Message($"remove started on {collateral.LabelShort}");
+            //Log.Message($"COLLATERAL remove started on {collateral}");
             if (!collateral_and_attacker.ContainsKey(collateral))
             {
                 //Log.Message($"no key found in collateral_and_attacker");
                 return;
             }
-            //Log.Message($"Target {collateral.LabelShort} was found in collateral_and_attacker list");
+            //Log.Message($"Collateral {collateral} was found in collateral_and_attacker list");
             bool didremove = attacker_and_target.Remove(collateral_and_attacker[collateral]);
             //Log.Message($"removed from Reverse: {didremove}");
             collateral_and_attacker.Remove(collateral);
             //Log.Message($"removed from Original dictionary: {didremove}");
+        }
+
+        public static void TryRemoveByTarget(int target)
+        {
+            //Log.Message($"TARGET remove started {target}");
+            bool found_attacker = target_and_attacker.TryGetValue(target, out int attacker);
+            //Log.Message("found attacker");
+            bool removed_attacker = attacker_and_target.Remove(attacker);
+            //Log.Message($"is removed attacker from attacker_and_target: {removed_attacker}");
+            bool removed_target = target_and_attacker.Remove(target);
+            //Log.Message($"is removed target from target_and_attacker: {removed_target}");
+            bool removed_collateral = collateral_and_attacker.Remove(target);
+            //Log.Message($"is removed target from target_and_attacker: {removed_collateral}");
         }
 
         public static bool TryGetTarget(int attacker, out int target)
@@ -122,11 +137,8 @@ namespace BetterGrenadeHandling
 
                 if (AttackerToTargetBlacklist.TryGetTarget(attacker.thingIDNumber, out int badTarget))
                 {
-                    //Log.Message($"{attacker.LabelShort} found in blacklist, target {badTarget.LabelShort}");
-                    if (badTarget != null)
-                    {
-                        __result.RemoveAll(t => t == null || t.Thing.thingIDNumber == badTarget);
-                    }
+                    //Log.Message($"GETPOTENTIALTARGETSFOR {attacker.LabelShort} found in blacklist, target {badTarget}");
+                    __result.RemoveAll(t => t == null || t.Thing.thingIDNumber == badTarget);
                 }
                 
                 /*

@@ -51,6 +51,14 @@ namespace BetterGrenadeHandling
 
                 //Log.Message($"3 {caster_pawn.LabelShort}");
 
+                //If blacklisted target somehow slips through (when target has moved in set position patch)
+                if (AttackerToTargetBlacklist.TryGetTarget(caster_pawn.thingIDNumber, out int badTarget) && badTarget == target_pawn.thingIDNumber)
+                {
+                    Log.Message($"TRYSTARTCASTON {caster_pawn.LabelShort} found in blacklist, target {target_pawn.LabelShort}");
+                    __result = false;
+                    return false;
+                }
+
                 //filter out targets initially when drafted for example
                 List<Thing> things_in_blast = new List<Thing>();
                 things_in_blast = BGHUtils.GetThingsInTargetBlast(caster_pawn, target_pawn, blastradius);
