@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using Verse;
 
+namespace BetterGrenadeHandling
+{
 [HarmonyPatch(typeof(Thing))]
 [HarmonyPatch("Position", MethodType.Setter)]
 public static class Thing_Position_Set_Patch
@@ -165,4 +167,5 @@ public static class Thing_Position_Set_Patch
         }
 
     }
+}
 }
