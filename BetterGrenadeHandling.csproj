@@ -58,7 +58,7 @@
     <Compile Include="Position_Set_Patch.cs" />
     <Compile Include="Utility_Methods.cs" />
     <Compile Include="GetPotentialTargetsFor_Patch.cs" />
-    <Compile Include="Stance_Warmup_Patch.cs" />
+    <Compile Include="SetStance_Patch.cs" />
     <Compile Include="ApplyPatches.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TryStartCastOn_Patch.cs" />

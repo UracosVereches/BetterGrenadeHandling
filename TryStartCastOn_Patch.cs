@@ -49,12 +49,16 @@ namespace BetterGrenadeHandling
                     return true;
                 }
 
+                int grenadierID = caster_pawn.thingIDNumber;
+                int targetID = target_pawn.thingIDNumber;
+
                 //Log.Message($"3 {caster_pawn.LabelShort}");
 
                 //If blacklisted target somehow slips through (when target has moved in set position patch)
-                if (AttackerToTargetBlacklist.TryGetTarget(caster_pawn.thingIDNumber, out int badTarget) && badTarget == target_pawn.thingIDNumber)
+                //OLD: if (AttackerToTargetBlacklist.TryGetTarget(caster_pawn.thingIDNumber, out int badTarget) && badTarget == target_pawn.thingIDNumber)
+                if (AttackBlacklist.HasAttackerAndTarget(grenadierID, targetID))
                 {
-                    Log.Message($"TRYSTARTCASTON {caster_pawn.LabelShort} found in blacklist, target {target_pawn.LabelShort}");
+                    //Log.Message($"TRYSTARTCASTON {caster_pawn.LabelShort} found in blacklist, target {target_pawn.LabelShort}");
                     __result = false;
                     return false;
                 }
@@ -65,7 +69,6 @@ namespace BetterGrenadeHandling
                 if (things_in_blast.NullOrEmpty())
                 {
                     GrenadiersOnWarmup.Add(caster_pawn);
-                    //Log.Message("null things in blast???");
                     return true;
                 }
 
@@ -75,9 +78,8 @@ namespace BetterGrenadeHandling
                 {
                     if (!BGHUtils.CanIgnoreCollateral(caster_pawn, collateral, verb))
                     {
-                        AttackerToTargetBlacklist.Set(caster_pawn.thingIDNumber, target_pawn.thingIDNumber, collateral.thingIDNumber);
-                        //bad practice, never do that, infinite loops ahead
-                        //pawn.stances.SetStance(new Stance_Mobile());
+                        //OLD: AttackerToTargetBlacklist.Set(caster_pawn.thingIDNumber, target_pawn.thingIDNumber, collateral.thingIDNumber);
+                        AttackBlacklist.AddTarget(grenadierID, targetID);
                         //Log.Message($"attacker {caster_pawn.LabelShort}");
                         __result = false;
                         return false;
