@@ -16,7 +16,7 @@ namespace BetterGrenadeHandling
 
             if (!found_verb || verb == null)
             {
-                //Verb not found or null in dictionary, create new entry
+                // Verb not found or null in dictionary, create new entry
                 verb = pawn.CurrentEffectiveVerb;
                 PawnVerb[pawn] = verb;
                 return verb;
@@ -25,10 +25,10 @@ namespace BetterGrenadeHandling
             return verb;
         }
 
-        //Works both for PawnVerb and VerbRadius
+        // Works both for PawnVerb and VerbRadius
         public static void Notify_VerbChanged(Pawn pawn)
         {
-            //Create/replace entry when new weapon is equipped
+            // Create/replace entry when new weapon is equipped
             Verb verb = pawn.CurrentEffectiveVerb;
             PawnVerb[pawn] = verb;
 
@@ -41,7 +41,7 @@ namespace BetterGrenadeHandling
             VerbRadius[verb] = radius;
         }
 
-        //Directly ripped out from Verse.VerbUtility.UsesExplosiveProjectiles(this Verb verb)
+        // Directly ripped out from Verse.VerbUtility.UsesExplosiveProjectiles(this Verb verb)
         public static float GetVerbBlastRadius(Verb verb)
         {
             bool found_radius = VerbRadius.TryGetValue(verb, out float radius);
@@ -62,7 +62,7 @@ namespace BetterGrenadeHandling
             return radius;
         }
 
-        //TODO: remove stale pawn entries(dead, passed to world)
+        // TODO: remove stale pawn entries(dead, passed to world)
     }
 
     [HarmonyPatch(typeof(Pawn_EquipmentTracker))]

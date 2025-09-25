@@ -25,7 +25,7 @@ namespace BetterGrenadeHandling
             {
                 return false;
             }
-            //can't figure it out
+            // Can't figure it out
             //if (stunnableComp != null && !stunnableComp.CanBeStunnedByDamage(def))
             //{
                 //return false;
@@ -110,7 +110,7 @@ namespace BetterGrenadeHandling
                 return true;
             }
 
-            //ignore collateral if its heat armor exceeds required threshold
+            // Ignore collateral if its heat armor exceeds required threshold (>90%)
             if (verb.IsIncendiary_Ranged() && GetOverallArmorRating(collateral_pawn, StatDefOf.ArmorRating_Heat) > 0.9f)
             {
                 return true;
@@ -131,10 +131,10 @@ namespace BetterGrenadeHandling
         {
             var badtargets = new List<IAttackTarget>();
 
-            //launchers = 1.1
-            //molotov = 1.1
-            //frag grenade = 1.9
-            //emp grenade = 3.5
+            // Launchers = 1.1
+            // Molotov = 1.1
+            // Frag grenade = 1.9
+            // Emp grenade = 3.5
             if (blastradius == 0f)
             {
                 return badtargets;
@@ -176,15 +176,16 @@ namespace BetterGrenadeHandling
                 return things_in_blast;
             }
 
-            //Include possible cells outside the actual radius too
+            // TODO: code duplicate, move blastradius operations to its own util function
+            // Include possible cells outside the actual radius too
             float blastradius_max = blastradius;
             if (blastradius == 1.1f)
             {
-                blastradius_max = 2.9f; //doesn't work the same for molotovs, frag max radius instead
+                blastradius_max = 2.9f; // Doesn't work the same for molotovs, frag max radius instead
             }
             else
             {
-                blastradius_max = blastradius + 1f; //just adding 1 does the trick
+                blastradius_max = blastradius + 1f; // Just adding 1 does the trick
             }
 
             Map map = target.Thing.Map;

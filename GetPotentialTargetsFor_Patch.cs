@@ -11,12 +11,11 @@ namespace BetterGrenadeHandling
 {
     public static class AttackBlacklist
     {
-        //Attacker and disallowed targets
         private static readonly Dictionary<int, HashSet<int>> AttackerRestrictedTargets = new Dictionary<int, HashSet<int>>();
 
         public static void AddTarget(int attacker, int target)
         {
-            //Setup HashSet for attacker
+            // Setup HashSet for attacker if there wasn't any
             if (!HasAttacker(attacker))
             {
                 AttackerRestrictedTargets[attacker] = new HashSet<int>();
@@ -64,7 +63,7 @@ namespace BetterGrenadeHandling
         {
             if (!HasAttacker(attacker))
             {
-                //Empty hashset if nothing was found
+                // Empty hashset if nothing was found
                 return new HashSet<int>();
             }
 
@@ -89,8 +88,6 @@ namespace BetterGrenadeHandling
                 if (AttackBlacklist.HasAttacker(attacker_id))
                 {
                     HashSet<int> restrictedtargets = AttackBlacklist.GetHashSet(attacker_id);
-                   
-                    //Log.Message($"GETPOTENTIALTARGETSFOR {attacker.LabelShort} found in blacklist, target {badTarget}");
                     __result.RemoveAll(t => restrictedtargets.Contains(t.Thing.thingIDNumber));
                 }
             }

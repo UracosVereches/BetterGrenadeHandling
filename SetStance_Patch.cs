@@ -24,7 +24,6 @@ namespace BetterGrenadeHandling
 
         public static void Remove(Pawn pawn)
         {
-            //Log.Message($"Removing {pawn.LabelShort} from warmup list");
             GrenadiersOnWarmupList.Remove(pawn);
         }
 
@@ -101,7 +100,7 @@ namespace BetterGrenadeHandling
                     return;
                 }
 
-                //GrenadiersOnStandBy - every pawn in stance mobile with explosives
+                // GrenadiersOnStandBy - every pawn in stance mobile with explosives
                 if (newStance is Stance_Mobile)
                 {
                     Verb verb = VerbCache.GetCurrentEffectiveVerb(pawn);
