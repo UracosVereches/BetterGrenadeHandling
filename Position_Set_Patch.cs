@@ -32,24 +32,35 @@ public static class Thing_Position_Set_Patch
             if ((__instance as Pawn).IsAnimal && __instance.Faction == null)
                 return;
 
-            AttackerToTargetBlacklist.TryRemoveByCollateral(__instance.thingIDNumber);
-            AttackerToTargetBlacklist.TryRemoveByTarget(__instance.thingIDNumber);
+            //AttackerToTargetBlacklist.TryRemoveByCollateral(__instance.thingIDNumber);
+            //AttackerToTargetBlacklist.TryRemoveByTarget(__instance.thingIDNumber);
 
-            Pawn[] grenadiers = GrenadiersOnWarmup.GetSnapshot();
-            if (grenadiers.Length == 0) return;
-
-            foreach (var grenadier in grenadiers)
+            //Cleanup stale entries in AttackBlacklist on grenadiers that are waiting for an attack
+            foreach (var waiting_grenadier in GrenadiersOnStandBy.GetList())
             {
-                if (__instance is null)
-                    return;
+                if (waiting_grenadier == null)
+                {
+                    continue;
+                }
+                int waiting_grenadierID = waiting_grenadier.thingIDNumber;
+                int moved_thingID = __instance.thingIDNumber;
 
+                AttackBlacklist.RemoveTarget(waiting_grenadierID, moved_thingID);
+            }
+
+            foreach (var grenadier in GrenadiersOnWarmup.GetSnapshot())
+            {
                 if (grenadier == null)
                 {
                     continue;
                 }
 
                 int grenadierID = grenadier.thingIDNumber;
+                int instanceID = __instance.thingIDNumber;
                 //Log.Message($"1 Grenadier: {grenadier.LabelShort}");
+
+                //Remove target since it just moved and this is a stale entry
+                AttackBlacklist.RemoveTarget(grenadierID, instanceID);
 
                 Verb verb = grenadier.CurrentEffectiveVerb;
 
@@ -71,7 +82,9 @@ public static class Thing_Position_Set_Patch
 
                 if (grenadier.CurJob == null || grenadier.CurJob.playerForced || grenadier.CurrentEffectiveVerb.IsMeleeAttack || target_thing == null)
                 {
-                    AttackerToTargetBlacklist.TryRemove(grenadierID);
+                    //AttackerToTargetBlacklist.TryRemove(grenadierID);
+                    AttackBlacklist.RemoveAttacker(grenadierID);
+                    //AttackerToTargetBlacklist.TryRemoveByTarget(instanceID);
                     continue;
                 }
                 //Log.Message($"4 Grenadier: {grenadier.LabelShort} - testing done");
@@ -79,12 +92,14 @@ public static class Thing_Position_Set_Patch
                 float blastradius = BGHUtils.GetCurrentBlastRadius(grenadier);
                 if (blastradius == 0f)
                 {
-                    AttackerToTargetBlacklist.TryRemove(grenadierID);
+                    //AttackerToTargetBlacklist.TryRemove(grenadierID);
+                    AttackBlacklist.RemoveAttacker(grenadierID);
+                    //AttackerToTargetBlacklist.TryRemoveByTarget(instanceID);
                     continue;
                 }
                 //Log.Message($"5 Grenadier: {grenadier.LabelShort} - blast radius positive");
 
-                if (blastradius == 1.1f)
+                if (blastradius == 1.1f) //1.1 - molotov radius(1x1 cross)
                 {
                     blastradius = 2.9f; //doesn't work the same for molotovs, frag max radius instead
                 }
@@ -93,7 +108,9 @@ public static class Thing_Position_Set_Patch
                     blastradius = blastradius + 1f; //just adding 1 does the trick
                 }
 
-                //If grenadier's target is instance(moved thing)
+                //Log.Message($"Position Set position: {value}, Real Position: {__instance.Position}, Target cell: {target.Cell}, Target center vector: {target.CenterVector3}");
+
+                //If grenadier is aiming at thing that just moved
                 if (__instance == target_thing)
                 {
                     List<Thing> things_in_blast = new List<Thing>();
@@ -101,7 +118,9 @@ public static class Thing_Position_Set_Patch
                     if (things_in_blast.NullOrEmpty())
                     {
                         //Log.Message($"null things in target's blast radius, removing {grenadier.LabelShort}");
-                        AttackerToTargetBlacklist.TryRemove(grenadierID);
+                        //AttackerToTargetBlacklist.TryRemove(grenadierID);
+                        AttackBlacklist.RemoveAttacker(grenadierID);
+                        //AttackerToTargetBlacklist.TryRemoveByTarget(instanceID);
                         continue;
                     }
 
@@ -110,7 +129,8 @@ public static class Thing_Position_Set_Patch
                         if (!BGHUtils.CanIgnoreCollateral(grenadier, collateral, verb))
                         {
                             //Log.Message($"spotted some collaterals in target's radius, adding {grenadier.LabelShort}");
-                            AttackerToTargetBlacklist.Set(grenadierID, target_thing.thingIDNumber, __instance.thingIDNumber);
+                            //AttackerToTargetBlacklist.Set(grenadierID, target_thing.thingIDNumber, __instance.thingIDNumber);
+                            AttackBlacklist.AddTarget(grenadierID, instanceID);
                             grenadier.stances.SetStance(new Stance_Mobile());
                             break;
                         }
@@ -132,7 +152,8 @@ public static class Thing_Position_Set_Patch
                 if (!BGHUtils.CanIgnoreCollateral(grenadier, __instance, verb))
                 {
                     //Log.Message($"SETTING UP BLACKLIST: {target_thing.LabelShort} and collateral {__instance.LabelShort}");
-                    AttackerToTargetBlacklist.Set(grenadierID, target_thing.thingIDNumber, __instance.thingIDNumber);
+                    //AttackerToTargetBlacklist.Set(grenadierID, target_thing.thingIDNumber, __instance.thingIDNumber);
+                    AttackBlacklist.AddTarget(grenadierID, instanceID);
                     grenadier.stances.SetStance(new Stance_Mobile()); // cancel warmup
                     continue;
                 }
@@ -140,7 +161,7 @@ public static class Thing_Position_Set_Patch
         }
         catch (Exception ex)
         {
-            Log.Error($"[Better Grenade Handling] Exception in TryStartCastOn: {ex}");
+            Log.Error($"[Better Grenade Handling] Exception in Position Set: {ex}");
         }
 
     }
