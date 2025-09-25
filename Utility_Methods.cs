@@ -154,7 +154,7 @@ namespace BetterGrenadeHandling
                 foreach (var collateral in things_in_blast)
                 {
                     Pawn pawn = th.Thing as Pawn;
-                    if (!CanIgnoreCollateral(pawn, collateral, VerbCache.GetVerb(pawn)))
+                    if (!CanIgnoreCollateral(pawn, collateral, VerbCache.GetCurrentEffectiveVerb(pawn)))
                     {
                         badtargets.Add(target);
                         break;
