@@ -57,16 +57,16 @@ namespace BetterGrenadeHandling
                 // Filter out targets initially when drafted for example
                 float expanded_blastradius = BGHUtils.ExpandBlastRadius(blastradius);
 
-                List<Thing> things_in_blast = new List<Thing>();
-                things_in_blast = BGHUtils.GetPawnsInRadius(target_pawn, expanded_blastradius);
+                List<Pawn> PawnsInBlastList = new List<Pawn>();
+                PawnsInBlastList = BGHUtils.GetPawnsInRadius(target_pawn, expanded_blastradius);
 
-                if (things_in_blast.NullOrEmpty())
+                if (PawnsInBlastList.NullOrEmpty())
                 {
                     GrenadiersOnWarmup.Add(caster_pawn);
                     return true;
                 }
 
-                foreach (Thing collateral in things_in_blast)
+                foreach (Pawn collateral in PawnsInBlastList)
                 {
                     if (!BGHUtils.CanIgnoreCollateral(caster_pawn, collateral, verb))
                     {

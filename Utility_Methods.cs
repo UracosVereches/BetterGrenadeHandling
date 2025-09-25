@@ -1,14 +1,7 @@
-﻿using System;
+﻿using RimWorld;
 using System.Collections.Generic;
-using System.Reflection;
-using HarmonyLib;
-using Verse;
-using Verse.AI;
-using RimWorld;
-using static UnityEngine.GraphicsBuffer;
-using System.Security.Cryptography;
-using System.Reflection.Emit;
 using UnityEngine;
+using Verse;
 
 
 namespace BetterGrenadeHandling
@@ -19,7 +12,7 @@ namespace BetterGrenadeHandling
          * Ripped out directly from RimWorld.StunHandler.CanBeStunnedByDamage(DamageDef def) 
          * TODO: cache. update it every 30 calls or so.
          * This method is very likely to change in future updates */
-        public static bool CanBeStunnedByDamage(Thing thing, DamageDef def)
+        private static bool CanBeStunnedByDamage(Pawn pawn, DamageDef def)
         {
             if (!def.causeStun)
             {
@@ -28,44 +21,40 @@ namespace BetterGrenadeHandling
             // Can't figure it out
             //if (stunnableComp != null && !stunnableComp.CanBeStunnedByDamage(def))
             //{
-                //return false;
+            //return false;
             //}
-            if (thing is Pawn pawn)
+            if (pawn.Downed || pawn.Dead)
             {
-                if (pawn.Downed || pawn.Dead)
-                {
-                    return false;
-                }
-                if (ModsConfig.AnomalyActive && pawn.health.hediffSet.HasHediff(HediffDefOf.AwokenCorpse))
-                {
-                    return false;
-                }
-                if (def == DamageDefOf.Stun)
-                {
-                    return true;
-                }
-                if (def == DamageDefOf.EMP && !pawn.RaceProps.IsFlesh)
-                {
-                    return true;
-                }
-                if (ModsConfig.BiotechActive && def == DamageDefOf.MechBandShockwave && pawn.RaceProps.IsMechanoid)
-                {
-                    return true;
-                }
-                if (ModsConfig.AnomalyActive && def == DamageDefOf.NerveStun && !pawn.RaceProps.IsMechanoid)
-                {
-                    return true;
-                }
                 return false;
             }
-            return true;
+            if (ModsConfig.AnomalyActive && pawn.health.hediffSet.HasHediff(HediffDefOf.AwokenCorpse))
+            {
+                return false;
+            }
+            if (def == DamageDefOf.Stun)
+            {
+                return true;
+            }
+            if (def == DamageDefOf.EMP && !pawn.RaceProps.IsFlesh)
+            {
+                return true;
+            }
+            if (ModsConfig.BiotechActive && def == DamageDefOf.MechBandShockwave && pawn.RaceProps.IsMechanoid)
+            {
+                return true;
+            }
+            if (ModsConfig.AnomalyActive && def == DamageDefOf.NerveStun && !pawn.RaceProps.IsMechanoid)
+            {
+                return true;
+            }
+            return false;
         }
 
         /*
          * Ripped out directly from RimWorld.ITab_Pawn_Gear.TryDrawOverallArmor(ref float curY, float width, StatDef stat, string label)
          * TODO: Cache results in a list when entry for a pawn is null. If there is an entry, change the result on ApparelChanged only
          * This method is very likely to change in future updates */
-        public static float GetOverallArmorRating(Pawn pawn, StatDef stat)
+        private static float GetOverallArmorRating(Pawn pawn, StatDef stat)
         {
             float num = 0f;
             float num2 = Mathf.Clamp01(pawn.GetStatValue(StatDefOf.ArmorRating_Heat) / 2f);
@@ -93,9 +82,10 @@ namespace BetterGrenadeHandling
             return num;
         }
 
-        /*
-         * Check if attacker can safely ignore collateral in target's blast radius */
-        public static bool CanIgnoreCollateral(Thing attacker, Thing collateral, Verb verb)
+        /// <summary>
+        /// Check if attacker can safely ignore collateral in target's blast radius
+        /// </summary>
+        public static bool CanIgnoreCollateral(Pawn attacker, Pawn collateral, Verb verb)
         {
             if (attacker == null || collateral == null || verb == null)
             {
@@ -103,7 +93,6 @@ namespace BetterGrenadeHandling
             }
 
             DamageDef def = verb.GetDamageDef();
-            Pawn collateral_pawn = collateral as Pawn;
 
             if (attacker.HostileTo(collateral))
             {
@@ -111,7 +100,7 @@ namespace BetterGrenadeHandling
             }
 
             // Ignore collateral if its heat armor exceeds required threshold (>90%)
-            if (verb.IsIncendiary_Ranged() && GetOverallArmorRating(collateral_pawn, StatDefOf.ArmorRating_Heat) > 0.9f)
+            if (verb.IsIncendiary_Ranged() && GetOverallArmorRating(collateral, StatDefOf.ArmorRating_Heat) > 0.9f)
             {
                 return true;
             }
@@ -125,7 +114,7 @@ namespace BetterGrenadeHandling
         }
 
         /// <summary>
-        /// Expand provided blast radius by 1 cell
+        /// Expand blast radius by 1 cell
         /// </summary>
         public static float ExpandBlastRadius(float radius)
         {
@@ -142,19 +131,19 @@ namespace BetterGrenadeHandling
         }
 
         /// <summary>
-        /// Get list of pawns in radius around thing
+        /// Get list of pawns in radius around pawn
         /// </summary>
-        public static List<Thing> GetPawnsInRadius(Thing thing, float radius)
+        public static List<Pawn> GetPawnsInRadius(Pawn pawn, float radius)
         {
-            List<Thing> things_in_blast = new List<Thing>();
+            List<Pawn> pawnsList = new List<Pawn>();
 
             if (radius <= 0f)
             {
-                return things_in_blast;
+                return pawnsList;
             }
 
-            Map map = thing.Map;
-            IntVec3 position = thing.Position;
+            Map map = pawn.Map;
+            IntVec3 position = pawn.Position;
             int num = GenRadial.NumCellsInRadius(radius);
             for (int i = 0; i < num; i++)
             {
@@ -164,19 +153,16 @@ namespace BetterGrenadeHandling
                     continue;
                 }
 
-                List<Thing> thingList = intVec.GetThingList(map);
-                for (int j = 0; j < thingList.Count; j++)
+                Pawn firstpawn = intVec.GetFirstPawn(map);
+                if (firstpawn == null || firstpawn == pawn)
                 {
-                    
-                    if (!(thingList[j] is Pawn) || thingList[j] == thing)
-                    {
-                        continue;
-                    }
-                    things_in_blast.Add(thingList[j]);
+                    continue;
                 }
+
+                pawnsList.Add(firstpawn);
             }
 
-            return things_in_blast;
+            return pawnsList;
         }
     }
 }

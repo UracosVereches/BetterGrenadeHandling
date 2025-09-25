@@ -56,8 +56,10 @@ public static class Thing_Position_Set_Patch
                     continue;
                 }
 
+                Pawn moved_pawn = __instance as Pawn;
+
                 int grenadierID = grenadier.thingIDNumber;
-                int instanceID = __instance.thingIDNumber;
+                int instanceID = moved_pawn.thingIDNumber;
 
                 Verb verb = VerbCache.GetCurrentEffectiveVerb(grenadier);
 
@@ -87,17 +89,17 @@ public static class Thing_Position_Set_Patch
                 float expanded_blastradius = BGHUtils.ExpandBlastRadius(blastradius);
 
                 // If grenadier is aiming at a thing that just moved
-                if (__instance == target_thing)
+                if (moved_pawn == target_thing)
                 {
-                    List<Thing> things_in_blast = new List<Thing>();
-                    things_in_blast = BGHUtils.GetPawnsInRadius(target.Pawn, expanded_blastradius);
-                    if (things_in_blast.NullOrEmpty())
+                    List<Pawn> PawnsInBlastList = new List<Pawn>();
+                    PawnsInBlastList = BGHUtils.GetPawnsInRadius(target.Pawn, expanded_blastradius);
+                    if (PawnsInBlastList.NullOrEmpty())
                     {
                         AttackBlacklist.RemoveAttacker(grenadierID);
                         continue;
                     }
 
-                    foreach (Thing collateral in things_in_blast)
+                    foreach (Pawn collateral in PawnsInBlastList)
                     {
                         if (!BGHUtils.CanIgnoreCollateral(grenadier, collateral, verb))
                         {
@@ -116,7 +118,7 @@ public static class Thing_Position_Set_Patch
                     continue;
                 }
 
-                if (!BGHUtils.CanIgnoreCollateral(grenadier, __instance, verb))
+                if (!BGHUtils.CanIgnoreCollateral(grenadier, moved_pawn, verb))
                 {
                     AttackBlacklist.AddTarget(grenadierID, instanceID);
                     grenadier.stances.SetStance(new Stance_Mobile()); // Cancel warmup
