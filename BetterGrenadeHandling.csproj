@@ -54,6 +54,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Debugging_Tools.cs" />
+    <Compile Include="Verb_Cache.cs" />
     <Compile Include="Multithreading.cs" />
     <Compile Include="Position_Set_Patch.cs" />
     <Compile Include="Utility_Methods.cs" />

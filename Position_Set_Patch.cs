@@ -64,12 +64,8 @@ public static class Thing_Position_Set_Patch
                 //Remove target since it just moved and this is a stale entry
                 AttackBlacklist.RemoveTarget(grenadierID, instanceID);
 
-                Verb verb = grenadier.CurrentEffectiveVerb;
+                Verb verb = VerbCache.GetCurrentEffectiveVerb(grenadier);
 
-                if (verb == null)
-                {
-                    continue;
-                }
                 //Log.Message($"2 Grenadier: {grenadier.LabelShort} - no verb");
 
                 LocalTargetInfo target = grenadier.TargetCurrentlyAimingAt;
@@ -82,7 +78,7 @@ public static class Thing_Position_Set_Patch
 
                 Thing target_thing = target.Thing;
 
-                if (grenadier.CurJob == null || grenadier.CurJob.playerForced || grenadier.CurrentEffectiveVerb.IsMeleeAttack || target_thing == null)
+                if (grenadier.CurJob == null || grenadier.CurJob.playerForced || verb.IsMeleeAttack || target_thing == null)
                 {
                     //AttackerToTargetBlacklist.TryRemove(grenadierID);
                     AttackBlacklist.RemoveAttacker(grenadierID);
@@ -91,7 +87,7 @@ public static class Thing_Position_Set_Patch
                 }
                 //Log.Message($"4 Grenadier: {grenadier.LabelShort} - testing done");
 
-                float blastradius = BGHUtils.GetCurrentBlastRadius(grenadier);
+                float blastradius = VerbCache.GetVerbBlastRadius(verb);
                 if (blastradius == 0f)
                 {
                     //AttackerToTargetBlacklist.TryRemove(grenadierID);

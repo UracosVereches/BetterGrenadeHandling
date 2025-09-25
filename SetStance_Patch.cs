@@ -104,7 +104,8 @@ namespace BetterGrenadeHandling
                 //GrenadiersOnStandBy - every pawn in stance mobile with explosives
                 if (newStance is Stance_Mobile)
                 {
-                    float blastradius = BGHUtils.GetCurrentBlastRadius(pawn);
+                    Verb verb = VerbCache.GetCurrentEffectiveVerb(pawn);
+                    float blastradius = VerbCache.GetVerbBlastRadius(verb);
                     if (blastradius == 0f)
                     {
                         return;

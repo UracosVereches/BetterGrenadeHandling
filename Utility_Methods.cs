@@ -16,21 +16,6 @@ namespace BetterGrenadeHandling
     public static class BGHUtils
     {
         /*
-         * Directly ripped out from Verse.VerbUtility.UsesExplosiveProjectiles(this Verb verb)
-         * Get blast radius of target searcher's weapon
-         * returns 0 if there is none */
-        public static float GetCurrentBlastRadius(IAttackTargetSearcher t)
-        {
-            Verb verb = t.CurrentEffectiveVerb;
-            ThingDef projectile = verb.GetProjectile();
-            if (projectile != null)
-            {
-                return projectile.projectile.explosionRadius;
-            }
-            return 0f;
-        }
-
-        /*
          * Ripped out directly from RimWorld.StunHandler.CanBeStunnedByDamage(DamageDef def) 
          * TODO: cache. update it every 30 calls or so.
          * This method is very likely to change in future updates */
@@ -168,7 +153,8 @@ namespace BetterGrenadeHandling
 
                 foreach (var collateral in things_in_blast)
                 {
-                    if (!CanIgnoreCollateral(th.Thing, collateral, th.CurrentEffectiveVerb))
+                    Pawn pawn = th.Thing as Pawn;
+                    if (!CanIgnoreCollateral(pawn, collateral, VerbCache.GetVerb(pawn)))
                     {
                         badtargets.Add(target);
                         break;

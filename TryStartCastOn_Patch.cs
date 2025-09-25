@@ -42,7 +42,7 @@ namespace BetterGrenadeHandling
 
                 //Log.Message($"2 {caster_pawn.LabelShort}");
 
-                float blastradius = BGHUtils.GetCurrentBlastRadius(caster_pawn);
+                float blastradius = VerbCache.GetVerbBlastRadius(verb);
 
                 if (blastradius == 0f)
                 {
