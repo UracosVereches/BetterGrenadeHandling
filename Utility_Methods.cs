@@ -124,47 +124,21 @@ namespace BetterGrenadeHandling
             return false;
         }
 
-        //public static float ExpandBlastRadius(float radius)
-
-        /*
-         * Find bad targets with allies in potential blast radius
-         * return them in a list */
-        public static List<IAttackTarget> GetBadTargetsInList(IAttackTargetSearcher th, List<IAttackTarget> __result, float blastradius)
+        /// <summary>
+        /// Expand provided blast radius by 1 cell
+        /// </summary>
+        public static float ExpandBlastRadius(float radius)
         {
-            var badtargets = new List<IAttackTarget>();
-
-            // Launchers = 1.1
-            // Molotov = 1.1
-            // Frag grenade = 1.9
-            // Emp grenade = 3.5
-            if (blastradius == 0f)
+            if (radius == 1.1f) // 1.1 - molotov radius(1x1 cross)
             {
-                return badtargets;
+                radius = 2.9f; // Doesn't work the same for molotovs, frag max radius instead
+            }
+            else
+            {
+                radius++; // Just adding 1 does the trick
             }
 
-            foreach (IAttackTarget target in __result)
-            {
-                List<Thing> things_in_blast = new List<Thing>();
-
-                things_in_blast = BGHUtils.GetPawnsInRadius(target as Pawn, blastradius);
-
-                if (things_in_blast.NullOrEmpty())
-                {
-                    continue;
-                }
-
-                foreach (var collateral in things_in_blast)
-                {
-                    Pawn pawn = th.Thing as Pawn;
-                    if (!CanIgnoreCollateral(pawn, collateral, VerbCache.GetCurrentEffectiveVerb(pawn)))
-                    {
-                        badtargets.Add(target);
-                        break;
-                    }
-
-                }
-            }
-            return badtargets;
+            return radius;
         }
 
         /// <summary>
@@ -179,22 +153,9 @@ namespace BetterGrenadeHandling
                 return things_in_blast;
             }
 
-            // TODO: code duplicate, move blastradius operations to its own util function
-            //actually move this shit the hell outta here
-            // Include possible cells outside the actual radius too
-            float blastradius_max = radius;
-            if (radius == 1.1f)
-            {
-                blastradius_max = 2.9f; // Doesn't work the same for molotovs, frag max radius instead
-            }
-            else
-            {
-                blastradius_max = radius + 1f; // Just adding 1 does the trick
-            }
-
             Map map = thing.Map;
             IntVec3 position = thing.Position;
-            int num = GenRadial.NumCellsInRadius(blastradius_max);
+            int num = GenRadial.NumCellsInRadius(radius);
             for (int i = 0; i < num; i++)
             {
                 IntVec3 intVec = position + GenRadial.RadialPattern[i];

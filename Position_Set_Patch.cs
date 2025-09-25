@@ -70,6 +70,7 @@ public static class Thing_Position_Set_Patch
 
                 Thing target_thing = target.Thing;
 
+                // If melee or attack was forced by player
                 if (grenadier.CurJob == null || grenadier.CurJob.playerForced || verb.IsMeleeAttack || target_thing == null)
                 {
                     AttackBlacklist.RemoveAttacker(grenadierID);
@@ -83,20 +84,13 @@ public static class Thing_Position_Set_Patch
                     continue;
                 }
 
-                if (blastradius == 1.1f) // 1.1 - molotov radius(1x1 cross)
-                {
-                    blastradius = 2.9f; // Doesn't work the same for molotovs, frag max radius instead
-                }
-                else
-                {
-                    blastradius = blastradius + 1f; // Just adding 1 does the trick
-                }
+                float expanded_blastradius = BGHUtils.ExpandBlastRadius(blastradius);
 
                 // If grenadier is aiming at a thing that just moved
                 if (__instance == target_thing)
                 {
                     List<Thing> things_in_blast = new List<Thing>();
-                    things_in_blast = BGHUtils.GetPawnsInRadius(target.Pawn, blastradius);
+                    things_in_blast = BGHUtils.GetPawnsInRadius(target.Pawn, expanded_blastradius);
                     if (things_in_blast.NullOrEmpty())
                     {
                         AttackBlacklist.RemoveAttacker(grenadierID);

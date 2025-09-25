@@ -39,7 +39,6 @@ namespace BetterGrenadeHandling
                 }
 
                 float blastradius = VerbCache.GetVerbBlastRadius(verb);
-
                 if (blastradius == 0f)
                 {
                     return true;
@@ -56,8 +55,11 @@ namespace BetterGrenadeHandling
                 }
 
                 // Filter out targets initially when drafted for example
+                float expanded_blastradius = BGHUtils.ExpandBlastRadius(blastradius);
+
                 List<Thing> things_in_blast = new List<Thing>();
-                things_in_blast = BGHUtils.GetPawnsInRadius(target_pawn, blastradius);
+                things_in_blast = BGHUtils.GetPawnsInRadius(target_pawn, expanded_blastradius);
+
                 if (things_in_blast.NullOrEmpty())
                 {
                     GrenadiersOnWarmup.Add(caster_pawn);
