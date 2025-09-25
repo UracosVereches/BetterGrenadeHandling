@@ -57,7 +57,7 @@ namespace BetterGrenadeHandling
 
                 // Filter out targets initially when drafted for example
                 List<Thing> things_in_blast = new List<Thing>();
-                things_in_blast = BGHUtils.GetThingsInTargetBlast(caster_pawn, target_pawn, blastradius);
+                things_in_blast = BGHUtils.GetPawnsInRadius(target_pawn, blastradius);
                 if (things_in_blast.NullOrEmpty())
                 {
                     GrenadiersOnWarmup.Add(caster_pawn);

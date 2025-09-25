@@ -96,7 +96,7 @@ public static class Thing_Position_Set_Patch
                 if (__instance == target_thing)
                 {
                     List<Thing> things_in_blast = new List<Thing>();
-                    things_in_blast = BGHUtils.GetThingsInTargetBlast(grenadier, target.Pawn, blastradius);
+                    things_in_blast = BGHUtils.GetPawnsInRadius(target.Pawn, blastradius);
                     if (things_in_blast.NullOrEmpty())
                     {
                         AttackBlacklist.RemoveAttacker(grenadierID);

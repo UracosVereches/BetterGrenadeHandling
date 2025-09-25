@@ -124,6 +124,8 @@ namespace BetterGrenadeHandling
             return false;
         }
 
+        //public static float ExpandBlastRadius(float radius)
+
         /*
          * Find bad targets with allies in potential blast radius
          * return them in a list */
@@ -144,7 +146,7 @@ namespace BetterGrenadeHandling
             {
                 List<Thing> things_in_blast = new List<Thing>();
 
-                things_in_blast = BGHUtils.GetThingsInTargetBlast(th, target, blastradius);
+                things_in_blast = BGHUtils.GetPawnsInRadius(target as Pawn, blastradius);
 
                 if (things_in_blast.NullOrEmpty())
                 {
@@ -165,31 +167,33 @@ namespace BetterGrenadeHandling
             return badtargets;
         }
 
-        /*
-         * Get list of things in blast radius of a single given target */
-        public static List<Thing> GetThingsInTargetBlast(IAttackTargetSearcher th, IAttackTarget target, float blastradius)
+        /// <summary>
+        /// Get list of pawns in radius around thing
+        /// </summary>
+        public static List<Thing> GetPawnsInRadius(Thing thing, float radius)
         {
             List<Thing> things_in_blast = new List<Thing>();
 
-            if (blastradius <= 0f)
+            if (radius <= 0f)
             {
                 return things_in_blast;
             }
 
             // TODO: code duplicate, move blastradius operations to its own util function
+            //actually move this shit the hell outta here
             // Include possible cells outside the actual radius too
-            float blastradius_max = blastradius;
-            if (blastradius == 1.1f)
+            float blastradius_max = radius;
+            if (radius == 1.1f)
             {
                 blastradius_max = 2.9f; // Doesn't work the same for molotovs, frag max radius instead
             }
             else
             {
-                blastradius_max = blastradius + 1f; // Just adding 1 does the trick
+                blastradius_max = radius + 1f; // Just adding 1 does the trick
             }
 
-            Map map = target.Thing.Map;
-            IntVec3 position = target.Thing.Position;
+            Map map = thing.Map;
+            IntVec3 position = thing.Position;
             int num = GenRadial.NumCellsInRadius(blastradius_max);
             for (int i = 0; i < num; i++)
             {
@@ -198,39 +202,15 @@ namespace BetterGrenadeHandling
                 {
                     continue;
                 }
-                //bool flag = true;
+
                 List<Thing> thingList = intVec.GetThingList(map);
                 for (int j = 0; j < thingList.Count; j++)
                 {
                     
-                    if (!(thingList[j] is IAttackTarget) || thingList[j] == target)
+                    if (!(thingList[j] is Pawn) || thingList[j] == thing)
                     {
                         continue;
                     }
-                    /*
-                    if (flag)
-                    {
-                        if (!GenSight.LineOfSight(position, intVec, map, skipFirstCell: true))
-                        {
-                            break;
-                        }
-                        flag = false;
-                    }
-                    */
-                    /*
-                    if (!th.Thing.HostileTo(thingList[j]))
-                    {
-                        if (emp)
-                        {
-                            if (true)
-                            {
-                                
-                            }
-                            return false;
-                        }
-                        return true;
-                    }
-                    */
                     things_in_blast.Add(thingList[j]);
                 }
             }
