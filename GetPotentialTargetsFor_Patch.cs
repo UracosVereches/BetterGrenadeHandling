@@ -9,173 +9,90 @@ using Verse.AI;
 
 namespace BetterGrenadeHandling
 {
-    public static class AttackerToTargetBlacklist
+    public static class AttackBlacklist
     {
-        public static readonly Dictionary<int, int> attacker_and_target = new Dictionary<int, int>();
-        public static readonly Dictionary<int, int> target_and_attacker = new Dictionary<int, int>();
-        public static readonly Dictionary<int, int> collateral_and_attacker = new Dictionary<int, int>();
+        //Attacker and disallowed targets
+        private static readonly Dictionary<int, HashSet<int>> AttackerRestrictedTargets = new Dictionary<int, HashSet<int>>();
 
-        //attacker_and_target[attacker][target]
-        //collateral_and_attacker[collateral][attacker]
-
-        private static int cleanup_counter = 0;
-        public static void Set(int attacker, int target, int collateral)
+        public static void AddTarget(int attacker, int target)
         {
-            cleanup_counter++;
-            if (cleanup_counter >= 1000)
+            //Setup HashSet for attacker
+            if (!HasAttacker(attacker))
             {
-                //Cleanup();
-                cleanup_counter = 0;
+                AttackerRestrictedTargets[attacker] = new HashSet<int>();
             }
-            if (attacker == null) return;
-            if (collateral == null) return;
-            if (target == null)
+
+            AttackerRestrictedTargets[attacker].Add(target);
+        }
+
+        public static void RemoveTarget(int attacker, int target)
+        {
+            if (!HasAttacker(attacker))
             {
-                TryRemove(attacker);
                 return;
             }
-            attacker_and_target[attacker] = target;
-            target_and_attacker[target] = attacker;
-            collateral_and_attacker[collateral] = attacker;
-            //Log.Message(collateral_and_attacker[collateral].LabelShort);
+
+            AttackerRestrictedTargets[attacker].Remove(target);
         }
 
-        public static bool TryRemove(int attacker)
+        public static void RemoveAttacker(int attacker)
         {
-            //if (attacker == null) return false;
-            return attacker_and_target.Remove(attacker);
-        }
-
-        public static void TryRemoveByCollateral(int collateral)
-        {
-            //Log.Message($"COLLATERAL remove started on {collateral}");
-            if (!collateral_and_attacker.ContainsKey(collateral))
+            if (!HasAttacker(attacker))
             {
-                //Log.Message($"no key found in collateral_and_attacker");
                 return;
             }
-            //Log.Message($"Collateral {collateral} was found in collateral_and_attacker list");
-            bool didremove = attacker_and_target.Remove(collateral_and_attacker[collateral]);
-            //Log.Message($"removed from Reverse: {didremove}");
-            collateral_and_attacker.Remove(collateral);
-            //Log.Message($"removed from Original dictionary: {didremove}");
+
+            AttackerRestrictedTargets.Remove(attacker);
         }
 
-        public static void TryRemoveByTarget(int target)
+        public static bool HasAttackerAndTarget(int attacker, int target)
         {
-            //Log.Message($"TARGET remove started {target}");
-            bool found_attacker = target_and_attacker.TryGetValue(target, out int attacker);
-            //Log.Message("found attacker");
-            bool removed_attacker = attacker_and_target.Remove(attacker);
-            //Log.Message($"is removed attacker from attacker_and_target: {removed_attacker}");
-            bool removed_target = target_and_attacker.Remove(target);
-            //Log.Message($"is removed target from target_and_attacker: {removed_target}");
-            bool removed_collateral = collateral_and_attacker.Remove(target);
-            //Log.Message($"is removed target from target_and_attacker: {removed_collateral}");
-        }
-
-        public static bool TryGetTarget(int attacker, out int target)
-        {
-            //if (attacker == null) { target = null; return false; }
-            return attacker_and_target.TryGetValue(attacker, out target);
-        }
-
-        public static KeyValuePair<int, int>[] GetSnapshot()
-        {
-            return attacker_and_target.ToArray();
-        }
-
-        /*
-        public static void Cleanup()
-        {
-            var toRemoveAttackerAndTarget = new List<Pawn>();
-            foreach (var kv in attacker_and_target)
+            if (!HasAttacker(attacker))
             {
-                var a = kv.Key;
-                var t = kv.Value;
-                if (a == null || a.Dead || a.Map == null || t == null || t.Dead || t.Map == null)
-                    toRemoveAttackerAndTarget.Add(a);
+                return false;
             }
-            foreach (var key in toRemoveAttackerAndTarget)
-                attacker_and_target.Remove(key);
 
-            var toRemoveCollateralAndAttacker = new List<Pawn>();
-            foreach (var kv in collateral_and_attacker)
-            {
-                var a = kv.Key;
-                var t = kv.Value;
-                if (a == null || a.Dead || a.Map == null || t == null || t.Dead || t.Map == null)
-                    toRemoveCollateralAndAttacker.Add(a);
-            }
-            foreach (var key in toRemoveCollateralAndAttacker)
-                collateral_and_attacker.Remove(key);
+            return AttackerRestrictedTargets[attacker].Contains(target);
         }
-        */
 
-        public static void Clear()
+        public static bool HasAttacker(int attacker)
         {
-            attacker_and_target.Clear();
-            collateral_and_attacker.Clear();
+            return AttackerRestrictedTargets.ContainsKey(attacker);
+        }
+
+        public static HashSet<int> GetHashSet(int attacker)
+        {
+            if (!HasAttacker(attacker))
+            {
+                //Empty hashset if nothing was found
+                return new HashSet<int>();
+            }
+
+            return AttackerRestrictedTargets[attacker];
         }
     }
 
-
+    //honestly, it's just shit
+    //transfer it to score system, bad targets get the least score
+    //in TryStartCastOn check if current target is blacklisted
+    //much better approach tbh
     [HarmonyPatch(typeof(AttackTargetsCache), "GetPotentialTargetsFor")]
     static class AttackTargetsCache_GetPotentialTargetsFor_Patch
     {
         static void Postfix(IAttackTargetSearcher th, ref List<IAttackTarget> __result)
         {
-            
             try
             {
-                
-                //if (th == null) return;
-                //Verb verb = th.CurrentEffectiveVerb;
-                //if (verb.IsMeleeAttack) return;
-                //if (!verb.UsesExplosiveProjectiles()) return;
                 Thing attacker = th.Thing;
+                int attacker_id = attacker.thingIDNumber;
 
-                if (AttackerToTargetBlacklist.TryGetTarget(attacker.thingIDNumber, out int badTarget))
+                if (AttackBlacklist.HasAttacker(attacker_id))
                 {
-                    Log.Message($"GETPOTENTIALTARGETSFOR {attacker.LabelShort} found in blacklist, target {badTarget}");
-                    __result.RemoveAll(t => t == null || t.Thing.thingIDNumber == badTarget);
+                    HashSet<int> restrictedtargets = AttackBlacklist.GetHashSet(attacker_id);
+                   
+                    //Log.Message($"GETPOTENTIALTARGETSFOR {attacker.LabelShort} found in blacklist, target {badTarget}");
+                    __result.RemoveAll(t => restrictedtargets.Contains(t.Thing.thingIDNumber));
                 }
-                
-                /*
-                float blastradius = BGHUtils.GetCurrentBlastRadius(th);
-
-                if (blastradius == 0f)
-                {
-                    return;
-                }
-                //Log.Message($"[BGH] Called for {th.Thing.LabelShort}");
-
-                if (th == null)
-                {
-                    return;
-                }
-
-                if (th.CurrentEffectiveVerb.IsMeleeAttack)
-                {
-                    return;
-                }
-
-                float blastradius = BGHUtils.GetCurrentBlastRadius(th);
-
-                if (blastradius == 0f)
-                {
-                    return;
-                }
-
-                var badtargets = new List<IAttackTarget>();
-                badtargets = BGHUtils.GetBadTargetsInList(th, __result, blastradius);
-
-                if (badtargets.Count > 0)
-                {
-                    __result.RemoveAll(t => t == null || badtargets.Contains(t));
-                    //Log.Message($"[BGH] Filtered targets for {th.Thing.LabelShort}: removed {badtargets.Count}, remaining {__result.Count}");
-                }
-                */
             }
             catch (Exception ex)
             {
