@@ -34,7 +34,7 @@ namespace BetterGrenadeHandling
 
                 if (caster_pawn.CurJob == null || caster_pawn.CurJob.playerForced || verb.IsMeleeAttack || target_pawn == null)
                 {
-                    //GrenadiersOnWarmup.Remove(caster_pawn);
+                    //WarmupGrenadiers.Remove(caster_pawn);
                     return true;
                 }
 
@@ -62,7 +62,7 @@ namespace BetterGrenadeHandling
 
                 if (PawnsInBlastList.NullOrEmpty())
                 {
-                    //GrenadiersOnWarmup.Add(caster_pawn);
+                    //WarmupGrenadiers.Add(caster_pawn);
                     return true;
                 }
 

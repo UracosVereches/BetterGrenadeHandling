@@ -9,37 +9,37 @@ using static UnityEngine.GraphicsBuffer;
 
 namespace BetterGrenadeHandling
 {
-    public static class GrenadiersOnWarmup
+    public static class WarmupGrenadiers
     {
-        public static readonly List<Pawn> GrenadiersOnWarmupList = new List<Pawn>();
+        public static readonly List<Pawn> WarmupGrenadiersList = new List<Pawn>();
 
         public static void Add(Pawn pawn)
         {
-            if (GrenadiersOnWarmupList.Contains(pawn))
+            if (WarmupGrenadiersList.Contains(pawn))
             {
                 return;
             }
-            GrenadiersOnWarmupList.Add(pawn);
+            WarmupGrenadiersList.Add(pawn);
         }
 
         public static void Remove(Pawn pawn)
         {
-            GrenadiersOnWarmupList.Remove(pawn);
+            WarmupGrenadiersList.Remove(pawn);
         }
 
         public static ReadOnlyCollection<Pawn> GetList()
         {
-            lock (GrenadiersOnWarmupList)
+            lock (WarmupGrenadiersList)
             {
-                return GrenadiersOnWarmupList.AsReadOnly();
+                return WarmupGrenadiersList.AsReadOnly();
             }
         }
 
         public static List<Pawn> GetSnapshot()
         {
-            lock (GrenadiersOnWarmupList)
+            lock (WarmupGrenadiersList)
             {
-                return new List<Pawn>(GrenadiersOnWarmupList);
+                return new List<Pawn>(WarmupGrenadiersList);
             }
         }
 
@@ -50,7 +50,7 @@ namespace BetterGrenadeHandling
             lock (sync)
             {
                 var toremove = new List<Pawn>();
-                foreach (var entry in GrenadiersOnWarmupList)
+                foreach (var entry in WarmupGrenadiersList)
                 {
                     if (e == null || e.pawn == null || e.pawn.Dead || e.pawn.Map == null) toRemove.Add(kv.Key)
                 }
@@ -59,29 +59,29 @@ namespace BetterGrenadeHandling
         */
     }
 
-    public static class GrenadiersOnStandBy
+    public static class StandByGrenadiers
     {
-        private static readonly List<Pawn> GrenadiersOnStandByList = new List<Pawn>();
+        private static readonly List<Pawn> StandByGrenadiersList = new List<Pawn>();
 
         public static void Add(Pawn pawn)
         {
-            if (GrenadiersOnStandByList.Contains(pawn))
+            if (StandByGrenadiersList.Contains(pawn))
             {
                 return;
             }
-            GrenadiersOnStandByList.Add(pawn);
+            StandByGrenadiersList.Add(pawn);
         }
 
         public static void Remove(Pawn pawn)
         {
-            GrenadiersOnStandByList.Remove(pawn);
+            StandByGrenadiersList.Remove(pawn);
         }
 
         public static ReadOnlyCollection<Pawn> GetList()
         {
-            lock (GrenadiersOnStandByList)
+            lock (StandByGrenadiersList)
             {
-                return GrenadiersOnStandByList.AsReadOnly();
+                return StandByGrenadiersList.AsReadOnly();
             }
         }
     }
@@ -106,8 +106,8 @@ namespace BetterGrenadeHandling
                 if (blastradius == 0f)
                 {
                     // Weapon has no blast radius, clean up lists
-                    GrenadiersOnStandBy.Remove(pawn);
-                    GrenadiersOnWarmup.Remove(pawn);
+                    StandByGrenadiers.Remove(pawn);
+                    WarmupGrenadiers.Remove(pawn);
                     return;
                 }
 
@@ -115,20 +115,20 @@ namespace BetterGrenadeHandling
 
                 if (newStance is Stance_Warmup)
                 {
-                    GrenadiersOnWarmup.Add(pawn);
-                    GrenadiersOnStandBy.Remove(pawn);
+                    WarmupGrenadiers.Add(pawn);
+                    StandByGrenadiers.Remove(pawn);
 
                 }
                 else if (newStance is Stance_Mobile)
                 {
-                    GrenadiersOnStandBy.Add(pawn);
-                    GrenadiersOnWarmup.Remove(pawn);
+                    StandByGrenadiers.Add(pawn);
+                    WarmupGrenadiers.Remove(pawn);
                 }
                 else
                 {
                     // Neither Stance_Warmup or Stance_Mobile
-                    GrenadiersOnStandBy.Remove(pawn);
-                    GrenadiersOnWarmup.Remove(pawn);
+                    StandByGrenadiers.Remove(pawn);
+                    WarmupGrenadiers.Remove(pawn);
                 }
             }
             catch (Exception ex)

@@ -18,8 +18,8 @@ namespace BetterGrenadeHandling
                 Map map = Find.CurrentMap;
                 if (map == null) return;
 
-                List<Pawn> standby_grenadiers = new List<Pawn>(GrenadiersOnStandBy.GetList());
-                List<Pawn> warmup_grenadiers = new List<Pawn>(GrenadiersOnWarmup.GetList());
+                List<Pawn> standby_grenadiers = new List<Pawn>(StandByGrenadiers.GetList());
+                List<Pawn> warmup_grenadiers = new List<Pawn>(WarmupGrenadiers.GetList());
 
                 foreach (Pawn pawn in map.mapPawns.AllPawnsSpawned)
                 {
@@ -62,8 +62,8 @@ namespace BetterGrenadeHandling
                 Map map = Find.CurrentMap;
                 if (map == null) return;
 
-                List<Pawn> standby_grenadiers = new List<Pawn>(GrenadiersOnStandBy.GetList());
-                List<Pawn> warmup_grenadiers = new List<Pawn>(GrenadiersOnWarmup.GetList());
+                List<Pawn> standby_grenadiers = new List<Pawn>(StandByGrenadiers.GetList());
+                List<Pawn> warmup_grenadiers = new List<Pawn>(WarmupGrenadiers.GetList());
 
                 foreach (Pawn pawn in map.mapPawns.AllPawnsSpawned)
                 {

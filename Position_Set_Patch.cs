@@ -36,7 +36,7 @@ public static class Thing_Position_Set_Patch
 
             // Iterate over idle grenadiers (Drafted || In combat && No target)
             // Cleanup stale entries in AttackBlacklist on grenadiers that are waiting for an attack
-            foreach (var waiting_grenadier in GrenadiersOnStandBy.GetList())
+            foreach (var waiting_grenadier in StandByGrenadiers.GetList())
             {
                 if (waiting_grenadier == null)
                 {
@@ -49,7 +49,7 @@ public static class Thing_Position_Set_Patch
             }
 
             // Iterate over every grenadier who is aiming right now
-            foreach (var grenadier in GrenadiersOnWarmup.GetSnapshot())
+            foreach (var grenadier in WarmupGrenadiers.GetSnapshot())
             {
                 if (grenadier == null)
                 {
