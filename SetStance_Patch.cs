@@ -100,6 +100,9 @@ namespace BetterGrenadeHandling
                     return;
                 }
 
+                // Ffs, there is a strange edge case right after when cooldown wears off - newStance != curStance
+                Stance stance = pawn.stances.curStance;
+
                 Verb verb = VerbCache.GetCurrentEffectiveVerb(pawn);
                 float blastradius = VerbCache.GetVerbBlastRadius(verb);
 
@@ -111,15 +114,13 @@ namespace BetterGrenadeHandling
                     return;
                 }
 
-                Log.Message($"{pawn.LabelShort} new stance is: {newStance.ToString()}");
-
-                if (newStance is Stance_Warmup)
+                if (stance is Stance_Warmup)
                 {
                     WarmupGrenadiers.Add(pawn);
                     StandByGrenadiers.Remove(pawn);
 
                 }
-                else if (newStance is Stance_Mobile)
+                else if (stance is Stance_Mobile)
                 {
                     StandByGrenadiers.Add(pawn);
                     WarmupGrenadiers.Remove(pawn);
