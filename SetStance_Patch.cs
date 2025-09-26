@@ -100,28 +100,35 @@ namespace BetterGrenadeHandling
                     return;
                 }
 
-                // GrenadiersOnStandBy - every pawn in stance mobile with explosives
-                if (newStance is Stance_Mobile)
-                {
-                    Verb verb = VerbCache.GetCurrentEffectiveVerb(pawn);
-                    float blastradius = VerbCache.GetVerbBlastRadius(verb);
-                    if (blastradius == 0f)
-                    {
-                        return;
-                    }
+                Verb verb = VerbCache.GetCurrentEffectiveVerb(pawn);
+                float blastradius = VerbCache.GetVerbBlastRadius(verb);
 
+                if (blastradius == 0f)
+                {
+                    // Weapon has no blast radius, clean up lists
+                    GrenadiersOnStandBy.Remove(pawn);
+                    GrenadiersOnWarmup.Remove(pawn);
+                    return;
+                }
+
+                Log.Message($"{pawn.LabelShort} new stance is: {newStance.ToString()}");
+
+                if (newStance is Stance_Warmup)
+                {
+                    GrenadiersOnWarmup.Add(pawn);
+                    GrenadiersOnStandBy.Remove(pawn);
+
+                }
+                else if (newStance is Stance_Mobile)
+                {
                     GrenadiersOnStandBy.Add(pawn);
+                    GrenadiersOnWarmup.Remove(pawn);
                 }
                 else
                 {
+                    // Neither Stance_Warmup or Stance_Mobile
                     GrenadiersOnStandBy.Remove(pawn);
-                }
-
-                if (!(newStance is Stance_Warmup))
-                {
                     GrenadiersOnWarmup.Remove(pawn);
-
-                    return;
                 }
             }
             catch (Exception ex)
