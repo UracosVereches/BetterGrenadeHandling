@@ -49,7 +49,17 @@ public static class Thing_Position_Set_Patch
                 }
                 int waiting_grenadierID = waiting_grenadier.thingIDNumber;
 
-                AttackBlacklist.RemoveTarget(waiting_grenadierID, moved_pawnID);
+                // Assume that moved pawn can be grenadier's potential target
+                // Continue if we found and removed target
+                if (AttackBlacklist.RemoveTarget(waiting_grenadierID, moved_pawnID))
+                {
+                    continue;
+                }
+
+                // Assume that moved pawn can be grenadier's ally.
+                // Just remove grenadier from blacklist completely since we don't know the target
+                // Because waiting grenadiers don't have any
+                AttackBlacklist.RemoveAttacker(waiting_grenadierID);
             }
 
             // Iterate over every grenadier who is aiming right now

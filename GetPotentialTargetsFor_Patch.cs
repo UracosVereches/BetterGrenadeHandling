@@ -24,24 +24,24 @@ namespace BetterGrenadeHandling
             AttackerRestrictedTargets[attacker].Add(target);
         }
 
-        public static void RemoveTarget(int attacker, int target)
+        public static bool RemoveTarget(int attacker, int target)
         {
             if (!HasAttacker(attacker))
             {
-                return;
+                return false;
             }
 
-            AttackerRestrictedTargets[attacker].Remove(target);
+            return AttackerRestrictedTargets[attacker].Remove(target);
         }
 
-        public static void RemoveAttacker(int attacker)
+        public static bool RemoveAttacker(int attacker)
         {
             if (!HasAttacker(attacker))
             {
-                return;
+                return false;
             }
 
-            AttackerRestrictedTargets.Remove(attacker);
+            return AttackerRestrictedTargets.Remove(attacker);
         }
 
         public static bool HasAttackerAndTarget(int attacker, int target)
