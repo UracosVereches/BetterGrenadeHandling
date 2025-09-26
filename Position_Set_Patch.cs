@@ -2,6 +2,7 @@
 using HarmonyLib;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using UnityEngine;
 using Verse;
 
@@ -34,6 +35,10 @@ public static class Thing_Position_Set_Patch
             if ((__instance as Pawn).IsAnimal && __instance.Faction == null)
                 return;
 
+            Pawn moved_pawn = __instance as Pawn;
+            int moved_pawnID = moved_pawn.thingIDNumber;
+            IntVec3 moved_thing_pos = value;
+
             // Iterate over idle grenadiers (Drafted || In combat && No target)
             // Cleanup stale entries in AttackBlacklist on grenadiers that are waiting for an attack
             foreach (var waiting_grenadier in StandByGrenadiers.GetList())
@@ -43,9 +48,8 @@ public static class Thing_Position_Set_Patch
                     continue;
                 }
                 int waiting_grenadierID = waiting_grenadier.thingIDNumber;
-                int moved_thingID = __instance.thingIDNumber;
 
-                AttackBlacklist.RemoveTarget(waiting_grenadierID, moved_thingID);
+                AttackBlacklist.RemoveTarget(waiting_grenadierID, moved_pawnID);
             }
 
             // Iterate over every grenadier who is aiming right now
@@ -56,13 +60,8 @@ public static class Thing_Position_Set_Patch
                     continue;
                 }
 
-                Pawn moved_pawn = __instance as Pawn;
-
                 int grenadierID = grenadier.thingIDNumber;
-                int instanceID = moved_pawn.thingIDNumber;
-
                 Verb verb = VerbCache.GetCurrentEffectiveVerb(grenadier);
-
                 LocalTargetInfo target = grenadier.TargetCurrentlyAimingAt;
 
                 if (target == null)
@@ -88,7 +87,7 @@ public static class Thing_Position_Set_Patch
 
                 float expanded_blastradius = BGHUtils.ExpandBlastRadius(blastradius);
 
-                // If grenadier is aiming at a thing that just moved
+                // Assume that grenadier's current target is the pawn that just moved. Check for allies around the target.
                 if (moved_pawn == target_thing)
                 {
                     List<Pawn> PawnsInBlastList = new List<Pawn>();
@@ -103,7 +102,7 @@ public static class Thing_Position_Set_Patch
                     {
                         if (!BGHUtils.CanIgnoreCollateral(grenadier, collateral, verb))
                         {
-                            AttackBlacklist.AddTarget(grenadierID, instanceID);
+                            AttackBlacklist.AddTarget(grenadierID, moved_pawnID);
                             grenadier.stances.SetStance(new Stance_Mobile()); // Cancel warmup
                             break;
                         }
@@ -111,8 +110,7 @@ public static class Thing_Position_Set_Patch
                     continue;
                 }
 
-                // If moved thing is ally
-                IntVec3 moved_thing_pos = value;
+                // Assume that moved thing is ally. Compare ally's distance to grenadier's current target
                 if (moved_thing_pos.DistanceToSquared(target_thing.Position) >= (blastradius * blastradius))
                 {
                     continue;
@@ -120,7 +118,7 @@ public static class Thing_Position_Set_Patch
 
                 if (!BGHUtils.CanIgnoreCollateral(grenadier, moved_pawn, verb))
                 {
-                    AttackBlacklist.AddTarget(grenadierID, instanceID);
+                    AttackBlacklist.AddTarget(grenadierID, moved_pawnID);
                     grenadier.stances.SetStance(new Stance_Mobile()); // Cancel warmup
                     continue;
                 }
