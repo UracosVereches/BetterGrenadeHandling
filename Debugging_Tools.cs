@@ -76,6 +76,11 @@ namespace BetterGrenadeHandling
                     {
                         GenMapUI.DrawThingLabel(GenMapUI.LabelDrawPosFor(pawn, -0.4f), "Warmup", Color.red);
                     }
+
+                    if (pawn.stances?.curStance != null)
+                    {
+                        GenMapUI.DrawThingLabel(GenMapUI.LabelDrawPosFor(pawn, 0.4f), pawn.stances.curStance.ToString(), Color.yellow);
+                    }
                 }
             }
             catch (Exception ex)
