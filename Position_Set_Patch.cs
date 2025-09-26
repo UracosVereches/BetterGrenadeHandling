@@ -121,7 +121,7 @@ public static class Thing_Position_Set_Patch
                 }
 
                 // Assume that moved thing is ally. Compare ally's distance to grenadier's current target
-                if (moved_thing_pos.DistanceToSquared(target_thing.Position) >= (blastradius * blastradius))
+                if (moved_thing_pos.DistanceToSquared(target_thing.Position) >= (expanded_blastradius * expanded_blastradius))
                 {
                     continue;
                 }
