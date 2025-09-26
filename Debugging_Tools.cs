@@ -1,79 +1,86 @@
 ﻿using HarmonyLib;
-using LudeonTK;
+using RimWorld;
+using System;
 using UnityEngine;
 using Verse;
+using System.Collections.Generic;
 
 namespace BetterGrenadeHandling
 {
 #if DEBUG
-    public class GrenadierStrongHighlightComponent : MapComponent
+    [HarmonyPatch(typeof(MapInterface), "MapInterfaceUpdate")]
+    public static class MapInterface_MapInterfaceUpdate_Postfix
     {
-        public GrenadierStrongHighlightComponent(Map map) : base(map) { }
-
-        public override void MapComponentOnGUI()
+        public static void Postfix()
         {
-            base.MapComponentOnGUI();
-
-            // Warmup red
-            foreach (Pawn pawn in GrenadiersOnWarmup.GetSnapshot())
+            try
             {
-                if (!IsPawnValidForMap(pawn)) continue;
-                DrawPawnStrongHighlight(pawn, Color.red);
-            }
+                Map map = Find.CurrentMap;
+                if (map == null) return;
 
-            // StandBy green
-            foreach (Pawn pawn in GrenadiersOnStandBy.GetList())
+                List<Pawn> standby_grenadiers = new List<Pawn>(GrenadiersOnStandBy.GetList());
+                List<Pawn> warmup_grenadiers = new List<Pawn>(GrenadiersOnWarmup.GetList());
+
+                foreach (Pawn pawn in map.mapPawns.AllPawnsSpawned)
+                {
+                    IntVec3 pos = pawn.Position;
+                    bool draw_true_pos = true;
+                    if (standby_grenadiers.Contains(pawn))
+                    {
+                        GenDraw.DrawRadiusRing(pos, 0.5f, Color.green);
+                        draw_true_pos = false;
+                    }
+
+                    if (warmup_grenadiers.Contains(pawn))
+                    {
+                        GenDraw.DrawRadiusRing(pos, 0.5f, Color.red);
+                        draw_true_pos = false;
+                    }
+
+                    // Show real position of a pawn
+                    if (draw_true_pos)
+                    {
+                        GenDraw.DrawRadiusRing(pos, 0.5f, Color.gray);
+                    }
+                }
+            }
+            catch (Exception ex)
             {
-                if (!IsPawnValidForMap(pawn)) continue;
-                DrawPawnStrongHighlight(pawn, Color.green);
+                Log.Message($"[Better Grenade Handling] Exception at MapInterfaceUpdate patch: {ex}");
             }
-        }
-
-        private bool IsPawnValidForMap(Pawn pawn)
-        {
-            return pawn != null && pawn.Spawned && pawn.Map == map && !pawn.Dead;
-        }
-
-        private void DrawPawnStrongHighlight(Pawn pawn, Color color)
-        {
-            Vector3 centerWorld = pawn.DrawPos;
-            if (pawn?.Graphic == null) return;
-
-            float gx = pawn.Graphic.drawSize.x;
-            float gz = pawn.Graphic.drawSize.y;
-
-            float angle = pawn.Rotation.AsAngle;
-            Quaternion rot = Quaternion.Euler(0f, angle, 0f);
-            Vector3 rightOffset = rot * new Vector3(gx * 0.5f, 0f, 0f);
-            Vector3 forwardOffset = rot * new Vector3(0f, 0f, gz * 0.5f);
-
-            Vector3 screenCenter = Find.Camera.WorldToScreenPoint(centerWorld);
-            if (screenCenter.z <= 0f) return;
-
-            Vector3 screenRight = Find.Camera.WorldToScreenPoint(centerWorld + rightOffset);
-            Vector3 screenForward = Find.Camera.WorldToScreenPoint(centerWorld + forwardOffset);
-
-            float pixelWidth = Mathf.Abs(screenRight.x - screenCenter.x) * 2f;
-            float pixelHeight = Mathf.Abs(screenForward.y - screenCenter.y) * 2f;
-
-            float x = screenCenter.x - pixelWidth * 0.5f;
-            float y = Screen.height - screenCenter.y - pixelHeight * 0.5f;
-            Rect rect = new Rect(x, y, pixelWidth, pixelHeight);
-
-            Rect scaled = UIScaling.AdjustRectToUIScaling(rect);
-            Widgets.DrawStrongHighlight(scaled, color);
         }
     }
 
-    [HarmonyPatch(typeof(Map))]
-    [HarmonyPatch("FinalizeInit")]
-    public static class Map_FinalizeInit_Patch
+    [HarmonyPatch(typeof(UIRoot))]
+    [HarmonyPatch("UIRootOnGUI")]
+    public static class UIRoot_UIRootOnGUI_Postfix
     {
-        public static void Postfix(Map __instance)
+        public static void Postfix(UIRoot __instance)
         {
-            if (__instance.GetComponent<GrenadierStrongHighlightComponent>() == null)
+            try
             {
-                __instance.components.Add(new GrenadierStrongHighlightComponent(__instance));
+                Map map = Find.CurrentMap;
+                if (map == null) return;
+
+                List<Pawn> standby_grenadiers = new List<Pawn>(GrenadiersOnStandBy.GetList());
+                List<Pawn> warmup_grenadiers = new List<Pawn>(GrenadiersOnWarmup.GetList());
+
+                foreach (Pawn pawn in map.mapPawns.AllPawnsSpawned)
+                {
+                    if (standby_grenadiers.Contains(pawn))
+                    {
+                        GenMapUI.DrawThingLabel(GenMapUI.LabelDrawPosFor(pawn, 0f), "Standby", Color.green);
+                    }
+
+                    if (warmup_grenadiers.Contains(pawn))
+                    {
+                        GenMapUI.DrawThingLabel(GenMapUI.LabelDrawPosFor(pawn, -0.4f), "Warmup", Color.red);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Message($"[Better Grenade Handling] Exception at MapInterfaceUpdate patch: {ex}");
             }
         }
     }
