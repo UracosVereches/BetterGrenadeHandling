@@ -21,11 +21,11 @@ namespace BetterGrenadeHandling
                 DrawPawnStrongHighlight(pawn, Color.red);
             }
 
-            // StandBy yellow
+            // StandBy green
             foreach (Pawn pawn in GrenadiersOnStandBy.GetList())
             {
                 if (!IsPawnValidForMap(pawn)) continue;
-                DrawPawnStrongHighlight(pawn, Color.yellow);
+                DrawPawnStrongHighlight(pawn, Color.green);
             }
         }
 
