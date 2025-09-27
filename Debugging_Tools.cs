@@ -29,12 +29,38 @@ namespace BetterGrenadeHandling
                     {
                         GenDraw.DrawRadiusRing(pos, 0.5f, Color.green);
                         draw_true_pos = false;
+                        
+                        if (AttackBlacklist.HasAttacker(pawn.thingIDNumber))
+                        {
+                            foreach (int pawnID in AttackBlacklist.GetHashSet(pawn.thingIDNumber))
+                            {
+                                IntVec3 targetpos = Debug_ThingID_PositionCache.GetPos(pawnID);
+                                if (targetpos == IntVec3.Zero)
+                                {
+                                    continue;
+                                }
+                                GenDraw.DrawLineBetween(pawn.Position.ToVector3Shifted(), targetpos.ToVector3Shifted(), SimpleColor.Green, 0.2f);
+                            }
+                        }
                     }
 
                     if (warmup_grenadiers.Contains(pawn))
                     {
                         GenDraw.DrawRadiusRing(pos, 0.5f, Color.red);
                         draw_true_pos = false;
+
+                        if (AttackBlacklist.HasAttacker(pawn.thingIDNumber))
+                        {
+                            foreach (int pawnID in AttackBlacklist.GetHashSet(pawn.thingIDNumber))
+                            {
+                                IntVec3 targetpos = Debug_ThingID_PositionCache.GetPos(pawnID);
+                                if (targetpos == IntVec3.Zero)
+                                {
+                                    continue;
+                                }
+                                GenDraw.DrawLineBetween(pawn.Position.ToVector3Shifted(), targetpos.ToVector3Shifted(), SimpleColor.Red, 0.2f);
+                            }
+                        }
                     }
 
                     // Show real position of a pawn
