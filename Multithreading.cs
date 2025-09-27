@@ -17,16 +17,16 @@ namespace BetterGrenadeHandling
             // Background worker, runs forever
             worker = Task.Run(() =>
             {
-                foreach (var job in queue.GetConsumingEnumerable())
+                try
                 {
-                    try
+                    foreach (var job in queue.GetConsumingEnumerable())
                     {
                         job();
                     }
-                    catch (Exception ex)
-                    {
-                        Log.Error($"[Better Grenade Handling] Scapegoat task failed: {ex}");
-                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error($"[Better Grenade Handling] Scapegoat background task failed: {ex}");
                 }
             });
         }
