@@ -9,6 +9,7 @@ namespace BetterGrenadeHandling
     {
         private static readonly ConcurrentDictionary<Pawn, Verb> PawnVerb = new ConcurrentDictionary<Pawn, Verb>();
         private static readonly ConcurrentDictionary<Verb, float> VerbRadius = new ConcurrentDictionary<Verb, float>();
+        private static readonly ConcurrentDictionary<Verb, float> VerbRange = new ConcurrentDictionary<Verb, float>();
 
         public static Verb GetCurrentEffectiveVerb(Pawn pawn)
         {
@@ -25,22 +26,6 @@ namespace BetterGrenadeHandling
             return verb;
         }
 
-        // Works both for PawnVerb and VerbRadius
-        public static void Notify_VerbChanged(Pawn pawn)
-        {
-            // Create/replace entry when new weapon is equipped
-            Verb verb = pawn.CurrentEffectiveVerb;
-            PawnVerb[pawn] = verb;
-
-            ThingDef projectile = verb.GetProjectile();
-            float radius = 0f;
-            if (projectile != null)
-            {
-                radius = projectile.projectile.explosionRadius;
-            }
-            VerbRadius[verb] = radius;
-        }
-
         // Directly ripped out from Verse.VerbUtility.UsesExplosiveProjectiles(this Verb verb)
         public static float GetVerbBlastRadius(Verb verb)
         {
@@ -48,7 +33,7 @@ namespace BetterGrenadeHandling
 
             if (!found_radius)
             {
-                //Blast radius not found in dictionary, create new entry
+                //Verb blast radius not found in dictionary, create new entry
                 ThingDef projectile = verb.GetProjectile();
                 radius = 0f;
                 if (projectile != null)
@@ -56,10 +41,41 @@ namespace BetterGrenadeHandling
                     radius = projectile.projectile.explosionRadius;
                 }
                 VerbRadius[verb] = radius;
+
                 return radius;
             }
 
             return radius;
+        }
+
+        public static float GetVerbRange(Verb verb)
+        {
+            bool found_range = VerbRange.TryGetValue(verb, out float range);
+
+            if (!found_range)
+            {
+                //Verb range not found in dictionary, create new entry
+                range = verb.EffectiveRange;
+                VerbRange[verb] = range;
+
+                return range;
+            }
+
+            return range;
+        }
+
+        // Called for every dictionary
+        // Remove stale entries when new weapon is equipped
+        public static void Notify_VerbChanged(Pawn pawn)
+        {
+            bool found_verb = PawnVerb.TryGetValue(pawn, out Verb verb);
+
+            if (found_verb)
+            {
+                VerbRadius.TryRemove(verb, out _);
+                VerbRange.TryRemove(verb, out _);
+                PawnVerb.TryRemove(pawn, out _);
+            }
         }
 
         // TODO: remove stale pawn entries(dead, passed to world)
