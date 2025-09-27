@@ -24,30 +24,36 @@ namespace BetterGrenadeHandling
                 }
 
                 Pawn caster_pawn = verb.CasterPawn;
-
                 if (caster_pawn == null)
                 {
                     return true;
                 }
 
                 Pawn target_pawn = castTarg.Pawn;
-
-                if (caster_pawn.CurJob == null || caster_pawn.CurJob.playerForced || verb.IsMeleeAttack || target_pawn == null)
-                {
-                    //WarmupGrenadiers.Remove(caster_pawn);
-                    return true;
-                }
-
-                float blastradius = VerbCache.GetVerbBlastRadius(verb);
-                if (blastradius == 0f)
+                if (target_pawn == null)
                 {
                     return true;
                 }
 
                 int grenadierID = caster_pawn.thingIDNumber;
+
+                // If forced by player/Melee attack
+                if (caster_pawn.CurJob == null || caster_pawn.CurJob.playerForced || verb.IsMeleeAttack)
+                {
+                    AttackBlacklist.RemoveAttacker(grenadierID);
+                    return true;
+                }
+
                 int targetID = target_pawn.thingIDNumber;
 
-                // If blacklisted target somehow slips through (when target has moved in set position patch)
+                float blastradius = VerbCache.GetVerbBlastRadius(verb);
+                if (blastradius == 0f)
+                {
+                    AttackBlacklist.RemoveAttacker(grenadierID);
+                    return true;
+                }
+
+                // If target is blacklisted
                 if (AttackBlacklist.HasAttackerAndTarget(grenadierID, targetID))
                 {
                     __result = false;
