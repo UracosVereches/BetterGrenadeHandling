@@ -11,7 +11,7 @@ namespace BetterGrenadeHandling
 {
     public static class AttackBlacklist
     {
-        private static readonly Dictionary<int, HashSet<int>> AttackerRestrictedTargets = new Dictionary<int, HashSet<int>>();
+        private static readonly ConcurrentDictionary<int, HashSet<int>> AttackerRestrictedTargets = new ConcurrentDictionary<int, HashSet<int>>();
 
         public static void AddTarget(int attacker, int target)
         {
@@ -41,7 +41,7 @@ namespace BetterGrenadeHandling
                 return false;
             }
 
-            return AttackerRestrictedTargets.Remove(attacker);
+            return AttackerRestrictedTargets.TryRemove(attacker, out _);
         }
 
         public static bool HasAttackerAndTarget(int attacker, int target)
@@ -71,10 +71,6 @@ namespace BetterGrenadeHandling
         }
     }
 
-    //honestly, it's just shit
-    //transfer it to score system, bad targets get the least score
-    //in TryStartCastOn check if current target is blacklisted
-    //much better approach tbh
     [HarmonyPatch(typeof(AttackTargetsCache), "GetPotentialTargetsFor")]
     static class AttackTargetsCache_GetPotentialTargetsFor_Patch
     {
