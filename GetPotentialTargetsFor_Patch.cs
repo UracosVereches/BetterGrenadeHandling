@@ -11,17 +11,18 @@ namespace BetterGrenadeHandling
 {
     public static class AttackBlacklist
     {
-        private static readonly ConcurrentDictionary<int, HashSet<int>> AttackerRestrictedTargets = new ConcurrentDictionary<int, HashSet<int>>();
+        //This dictionary contains: ATTACKER -> [ANOTHER DICTIONARY OF RESTRICTED TARGETS]
+        private static readonly ConcurrentDictionary<int, ConcurrentDictionary<int, byte>> AttackerRestrictedTargets = new ConcurrentDictionary<int, ConcurrentDictionary<int, byte>>();
 
         public static void AddTarget(int attacker, int target)
         {
             // Setup HashSet for attacker if there wasn't any
             if (!HasAttacker(attacker))
             {
-                AttackerRestrictedTargets[attacker] = new HashSet<int>();
+                AttackerRestrictedTargets[attacker] = new ConcurrentDictionary<int, byte>();
             }
 
-            AttackerRestrictedTargets[attacker].Add(target);
+            AttackerRestrictedTargets[attacker].TryAdd(target, 0);
         }
 
         public static bool RemoveTarget(int attacker, int target)
@@ -31,7 +32,7 @@ namespace BetterGrenadeHandling
                 return false;
             }
 
-            return AttackerRestrictedTargets[attacker].Remove(target);
+            return AttackerRestrictedTargets[attacker].TryRemove(target, out _);
         }
 
         public static bool RemoveAttacker(int attacker)
@@ -51,7 +52,7 @@ namespace BetterGrenadeHandling
                 return false;
             }
 
-            return AttackerRestrictedTargets[attacker].Contains(target);
+            return AttackerRestrictedTargets[attacker].ContainsKey(target);
         }
 
         public static bool HasAttacker(int attacker)
@@ -59,12 +60,12 @@ namespace BetterGrenadeHandling
             return AttackerRestrictedTargets.ContainsKey(attacker);
         }
 
-        public static HashSet<int> GetHashSet(int attacker)
+        public static ConcurrentDictionary<int, byte> GetDictionary(int attacker)
         {
             if (!HasAttacker(attacker))
             {
                 // Empty hashset if nothing was found
-                return new HashSet<int>();
+                return new ConcurrentDictionary<int, byte>();
             }
 
             return AttackerRestrictedTargets[attacker];
@@ -83,15 +84,14 @@ namespace BetterGrenadeHandling
 
                 if (AttackBlacklist.HasAttacker(attacker_id))
                 {
-                    HashSet<int> restrictedtargets = AttackBlacklist.GetHashSet(attacker_id);
-                    __result.RemoveAll(t => restrictedtargets.Contains(t.Thing.thingIDNumber));
+                    ConcurrentDictionary<int, byte> restrictedtargets = AttackBlacklist.GetDictionary(attacker_id);
+                    __result.RemoveAll(t => restrictedtargets.ContainsKey(t.Thing.thingIDNumber));
                 }
             }
             catch (Exception ex)
             {
                 Log.Error($"[BGH] Exception in Stance_Warmup: {ex}");
             }
-            
         }
     }
 }

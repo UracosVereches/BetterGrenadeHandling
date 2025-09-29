@@ -32,8 +32,9 @@ namespace BetterGrenadeHandling
                         
                         if (AttackBlacklist.HasAttacker(pawn.thingIDNumber))
                         {
-                            foreach (int pawnID in AttackBlacklist.GetHashSet(pawn.thingIDNumber))
+                            foreach (var keyvalue in AttackBlacklist.GetDictionary(pawn.thingIDNumber))
                             {
+                                int pawnID = keyvalue.Key;
                                 IntVec3 targetpos = Debug_ThingID_PositionCache.GetPos(pawnID);
                                 if (targetpos == IntVec3.Zero)
                                 {
@@ -51,8 +52,9 @@ namespace BetterGrenadeHandling
 
                         if (AttackBlacklist.HasAttacker(pawn.thingIDNumber))
                         {
-                            foreach (int pawnID in AttackBlacklist.GetHashSet(pawn.thingIDNumber))
+                            foreach (var keyvalue in AttackBlacklist.GetDictionary(pawn.thingIDNumber))
                             {
+                                int pawnID = keyvalue.Key;
                                 IntVec3 targetpos = Debug_ThingID_PositionCache.GetPos(pawnID);
                                 if (targetpos == IntVec3.Zero)
                                 {
