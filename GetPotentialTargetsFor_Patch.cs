@@ -16,59 +16,38 @@ namespace BetterGrenadeHandling
 
         public static void AddTarget(int attacker, int target)
         {
-            // Setup HashSet for attacker if there wasn't any
-            if (!HasAttacker(attacker))
-            {
-                AttackerRestrictedTargets[attacker] = new ConcurrentDictionary<int, byte>();
-            }
-
-            AttackerRestrictedTargets[attacker].TryAdd(target, 0);
+            // Setup dictionary for attacker if there wasn't any
+            var dict = AttackerRestrictedTargets.GetOrAdd(attacker, _ => new ConcurrentDictionary<int, byte>());
+            dict.TryAdd(target, 0);
         }
 
         public static bool RemoveTarget(int attacker, int target)
         {
-            if (!HasAttacker(attacker))
+            if (AttackerRestrictedTargets.TryGetValue(attacker, out var dict))
             {
-                return false;
+                return dict.TryRemove(target, out _);
             }
-
-            return AttackerRestrictedTargets[attacker].TryRemove(target, out _);
+            return false;
         }
 
         public static bool RemoveAttacker(int attacker)
         {
-            if (!HasAttacker(attacker))
-            {
-                return false;
-            }
-
             return AttackerRestrictedTargets.TryRemove(attacker, out _);
         }
 
         public static bool HasAttackerAndTarget(int attacker, int target)
         {
-            if (!HasAttacker(attacker))
-            {
-                return false;
-            }
-
-            return AttackerRestrictedTargets[attacker].ContainsKey(target);
+            return AttackerRestrictedTargets.TryGetValue(attacker, out var dict) && dict.TryGetValue(target, out _);
         }
 
         public static bool HasAttacker(int attacker)
         {
-            return AttackerRestrictedTargets.ContainsKey(attacker);
+            return AttackerRestrictedTargets.TryGetValue(attacker, out _);
         }
 
         public static ConcurrentDictionary<int, byte> GetDictionary(int attacker)
         {
-            if (!HasAttacker(attacker))
-            {
-                // Empty hashset if nothing was found
-                return new ConcurrentDictionary<int, byte>();
-            }
-
-            return AttackerRestrictedTargets[attacker];
+            return AttackerRestrictedTargets.GetOrAdd(attacker, _ => new ConcurrentDictionary<int, byte>());
         }
     }
 
