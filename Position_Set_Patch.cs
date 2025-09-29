@@ -142,7 +142,7 @@ namespace BetterGrenadeHandling
 
                     if (!BGHUtils.CanIgnoreCollateral(grenadier, moved_pawn, verb))
                     {
-                        AttackBlacklist.AddTarget(grenadierID, moved_pawnID);
+                        AttackBlacklist.AddTarget(grenadierID, target_thing.thingIDNumber);
                         grenadier.stances.SetStance(new Stance_Mobile()); // Cancel warmup
                         continue;
                     }
