@@ -9,7 +9,7 @@ namespace BetterGrenadeHandling
 {
     public static class Scapegoat
     {
-        private static readonly BlockingCollection<Func<object>> queue = new BlockingCollection<Func<object>>();
+        private static readonly BlockingCollection<Action> queue = new BlockingCollection<Action>();
         private static readonly Task worker;
 
         static Scapegoat()
@@ -21,18 +21,24 @@ namespace BetterGrenadeHandling
                 {
                     foreach (var job in queue.GetConsumingEnumerable())
                     {
-                        job();
+                        try
+                        {
+                            job();
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Error($"[Better Grenade Handling: Scapegoat] Job failed: {ex}");
+                        }
                     }
                 }
                 catch (Exception ex)
                 {
-                    Log.Error($"[Better Grenade Handling] Scapegoat background task failed: {ex}");
+                    Log.Error($"[Better Grenade Handling: Scapegoat] Background task failed: {ex}");
                 }
             });
         }
 
-        // Add work
-        public static void Enqueue(Func<object> job)
+        public static void Enqueue(Action job)
         {
             queue.Add(job);
         }
