@@ -53,6 +53,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AvoidIncomingExplosives.cs" />
     <Compile Include="Debugging_Tools.cs" />
     <Compile Include="Verb_Cache.cs" />
     <Compile Include="Multithreading.cs" />
