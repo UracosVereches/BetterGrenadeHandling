@@ -21,55 +21,65 @@ namespace BetterGrenadeHandling
                 List<Pawn> standby_grenadiers = new List<Pawn>(StandByGrenadiers.GetList());
                 List<Pawn> warmup_grenadiers = new List<Pawn>(WarmupGrenadiers.GetList());
 
+                // Show standby grenadiers
+                foreach (Pawn pawn in standby_grenadiers)
+                {
+                    IntVec3 pos = pawn.Position;
+                    GenDraw.DrawRadiusRing(pos, 0.5f, Color.green);
+
+                    if (AttackBlacklist.HasAttacker(pawn.thingIDNumber))
+                    {
+                        foreach (var keyvalue in AttackBlacklist.GetDictionary(pawn.thingIDNumber))
+                        {
+                            int pawnID = keyvalue.Key;
+                            IntVec3 targetpos = Debug_ThingID_PositionCache.GetPos(pawnID);
+                            if (targetpos == IntVec3.Zero)
+                            {
+                                continue;
+                            }
+                            GenDraw.DrawLineBetween(pawn.Position.ToVector3Shifted(), targetpos.ToVector3Shifted(), SimpleColor.Green, 0.2f);
+                        }
+                    }
+                }
+
+                // Show warmup grenaiers
+                foreach (Pawn pawn in warmup_grenadiers)
+                {
+                    IntVec3 pos = pawn.Position;
+
+                    GenDraw.DrawRadiusRing(pos, 0.5f, Color.red);
+
+                    if (AttackBlacklist.HasAttacker(pawn.thingIDNumber))
+                    {
+                        foreach (var keyvalue in AttackBlacklist.GetDictionary(pawn.thingIDNumber))
+                        {
+                            int pawnID = keyvalue.Key;
+                            IntVec3 targetpos = Debug_ThingID_PositionCache.GetPos(pawnID);
+                            if (targetpos == IntVec3.Zero)
+                            {
+                                continue;
+                            }
+                            GenDraw.DrawLineBetween(pawn.Position.ToVector3Shifted(), targetpos.ToVector3Shifted(), SimpleColor.Red, 0.2f);
+                        }
+                    }
+                }
+
+                // Show real positions of every pawn
                 foreach (Pawn pawn in map.mapPawns.AllPawnsSpawned)
                 {
                     IntVec3 pos = pawn.Position;
-                    bool draw_true_pos = true;
-                    if (standby_grenadiers.Contains(pawn))
-                    {
-                        GenDraw.DrawRadiusRing(pos, 0.5f, Color.green);
-                        draw_true_pos = false;
-                        
-                        if (AttackBlacklist.HasAttacker(pawn.thingIDNumber))
-                        {
-                            foreach (var keyvalue in AttackBlacklist.GetDictionary(pawn.thingIDNumber))
-                            {
-                                int pawnID = keyvalue.Key;
-                                IntVec3 targetpos = Debug_ThingID_PositionCache.GetPos(pawnID);
-                                if (targetpos == IntVec3.Zero)
-                                {
-                                    continue;
-                                }
-                                GenDraw.DrawLineBetween(pawn.Position.ToVector3Shifted(), targetpos.ToVector3Shifted(), SimpleColor.Green, 0.2f);
-                            }
-                        }
-                    }
-
-                    if (warmup_grenadiers.Contains(pawn))
-                    {
-                        GenDraw.DrawRadiusRing(pos, 0.5f, Color.red);
-                        draw_true_pos = false;
-
-                        if (AttackBlacklist.HasAttacker(pawn.thingIDNumber))
-                        {
-                            foreach (var keyvalue in AttackBlacklist.GetDictionary(pawn.thingIDNumber))
-                            {
-                                int pawnID = keyvalue.Key;
-                                IntVec3 targetpos = Debug_ThingID_PositionCache.GetPos(pawnID);
-                                if (targetpos == IntVec3.Zero)
-                                {
-                                    continue;
-                                }
-                                GenDraw.DrawLineBetween(pawn.Position.ToVector3Shifted(), targetpos.ToVector3Shifted(), SimpleColor.Red, 0.2f);
-                            }
-                        }
-                    }
-
-                    // Show real position of a pawn
-                    if (draw_true_pos)
+                    if (!(standby_grenadiers.Contains(pawn)) && !(warmup_grenadiers.Contains(pawn)))
                     {
                         GenDraw.DrawRadiusRing(pos, 0.5f, Color.gray);
                     }
+                }
+
+                // Show dangerous positions
+                foreach (var kvp in DangerPositionTracker.GetDictionary())
+                {
+                    IntVec3 pos = kvp.Key;
+
+                    GenDraw.DrawRadiusRing(pos, 0.5f, Color.yellow);
                 }
             }
             catch (Exception ex)
