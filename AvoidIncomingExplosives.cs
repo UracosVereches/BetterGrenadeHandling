@@ -9,6 +9,9 @@ using Verse;
 using System.Collections.Concurrent;
 using UnityEngine;
 using RimWorld;
+using static Verse.PathRequest;
+using Unity.Collections;
+using Verse.Noise;
 
 namespace BetterGrenadeHandling
 {
@@ -40,6 +43,7 @@ namespace BetterGrenadeHandling
 
         public static ConcurrentDictionary<IntVec3, Projectile> GetDictionary()
         {
+            
             return new ConcurrentDictionary<IntVec3, Projectile>(dict);
         }
 
@@ -56,18 +60,102 @@ namespace BetterGrenadeHandling
         }
     }
 
+    // Custom grid constructor for dangerous positions
+    public class DangerousGrid : IPathGridCustomizer
+    {
+        private readonly Map map;
+        private NativeArray<ushort> offsets;
+        private static readonly Dictionary<Map, DangerousGrid> dangerousGridCache = new Dictionary<Map, DangerousGrid>();
+
+        public DangerousGrid(Map map)
+        {
+            this.map = map;
+            offsets = new NativeArray<ushort>(map.cellIndices.NumGridCells, Allocator.Persistent);
+            foreach (var kvp in DangerPositionTracker.GetDictionary())
+            {
+                IntVec3 pos = kvp.Key;
+
+                if (pos.InBounds(map))
+                {
+                    int index = map.cellIndices.CellToIndex(pos);
+                    offsets[index] = 9000; // 10000 - impassable
+                }
+            }
+        }
+
+        public static NativeArray<ushort> CombineWithCustomizer(IPathGridCustomizer original, DangerousGrid dangerousGrid)
+        {
+            var danger = dangerousGrid.GetOffsetGrid();
+            var orig = original?.GetOffsetGrid();
+
+            int len = Math.Max(danger.Length, orig?.Length ?? 0);
+            var combined = new NativeArray<ushort>(len, Allocator.Persistent);
+
+            int dangerLen = danger.Length;
+            int origLen = orig?.Length ?? 0;
+
+            for (int i = 0; i < len; i++)
+            {
+                ushort d = (i < dangerLen) ? danger[i] : (ushort)0;
+                ushort o = (i < origLen) ? orig[i] : (ushort)0;
+                combined[i] = (o >= d) ? o : d;
+            }
+
+            return combined;
+        }
+
+        public NativeArray<ushort> GetOffsetGrid()
+        {
+            // Reset everything
+            for (int i = 0; i < offsets.Length; i++)
+            {
+                offsets[i] = 0;
+            }
+
+            // Mark all dangerous cells
+            foreach (var kvp in DangerPositionTracker.GetDictionary())
+            {
+                IntVec3 pos = kvp.Key;
+
+                if (pos.InBounds(map))
+                {
+                    int index = map.cellIndices.CellToIndex(pos);
+                    offsets[index] = 9000; // 10000 - impassable
+                }
+            }
+
+            return offsets;
+        }
+
+        public static DangerousGrid GetForMap(Map map)
+        {
+            bool found = dangerousGridCache.TryGetValue(map, out DangerousGrid grid);
+
+            if (!found)
+            {
+                // Do unfound logic here
+            }
+
+            return grid;
+        }
+
+        // Dispose manually later
+        public void Dispose()
+        {
+            if (offsets.IsCreated)
+                offsets.Dispose();
+        }
+    }
+
     [HarmonyPatch(typeof(PawnUtility))]
     [HarmonyPatch("KnownDangerAt")]
     public static class Patch_KnownDangerAt_Prefix
     {
-        // Prefix runs before the original method
-        // Return 'true' to run original, 'false' to skip it
         static bool Prefix(IntVec3 c, Map map, Pawn forPawn, ref bool __result)
         {
             __result = DangerPositionTracker.IsPositionDangerousFor(c, forPawn);
             if (__result)
             {
-                Log.Message($"big cockston at {c} for {forPawn.LabelShort}");
                 return false;
             }
 
@@ -75,18 +163,47 @@ namespace BetterGrenadeHandling
         }
     }
 
+    // Include our dangerous cell grid with custom costs
+    [HarmonyPatch(typeof(PathRequest))]
+    [HarmonyPatch(MethodType.Constructor)]
+    [HarmonyPatch(new Type[] {
+    typeof(Map), typeof(IntVec3), typeof(LocalTargetInfo), typeof(IntVec3?),
+    typeof(TraverseParms), typeof(PathFinderCostTuning), typeof(PathEndMode),
+    typeof(Pawn), typeof(int), typeof(int), typeof(int), typeof(IPathGridCustomizer)
+    })]
+    public static class PathRequest_Constructor_Patch
+    {
+        static void Prefix(
+            PathRequest __instance,
+            Map map,
+            IntVec3 start,
+            LocalTargetInfo dest,
+            IntVec3? exactDestination,
+            TraverseParms traverseParms,
+            PathFinderCostTuning tuning,
+            PathEndMode peMode,
+            Pawn pawn,
+            int tickCreated,
+            int tickStart,
+            int tickDeadline,
+            ref IPathGridCustomizer customizer)
+        {
+            customizer = DangerousGrid.GetForMap(map);
+        }
+    }
+
     // Mark dangerous positions for pawns to avoid when explosive is launched
     [HarmonyPatch(typeof(Projectile))]
     [HarmonyPatch("Launch")]
     [HarmonyPatch(new Type[] {
-        typeof(Thing),
-        typeof(Vector3),
-        typeof(LocalTargetInfo),
-        typeof(LocalTargetInfo),
-        typeof(ProjectileHitFlags),
-        typeof(bool),
-        typeof(Thing),
-        typeof(ThingDef)
+    typeof(Thing),
+    typeof(Vector3),
+    typeof(LocalTargetInfo),
+    typeof(LocalTargetInfo),
+    typeof(ProjectileHitFlags),
+    typeof(bool),
+    typeof(Thing),
+    typeof(ThingDef)
     })]
     public static class Patch_Projectile_Launch_Postfix
     {
