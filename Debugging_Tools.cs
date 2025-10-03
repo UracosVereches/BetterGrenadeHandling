@@ -4,6 +4,7 @@ using System;
 using UnityEngine;
 using Verse;
 using System.Collections.Generic;
+using Unity.Collections;
 
 namespace BetterGrenadeHandling
 {
@@ -74,7 +75,7 @@ namespace BetterGrenadeHandling
                     }
                 }
 
-                // Show dangerous positions
+                // Show dangerous positions directly from tracker
                 foreach (var kvp in DangerPositionTracker.GetDictionary())
                 {
                     foreach (IntVec3 pos in kvp.Value)
@@ -121,10 +122,24 @@ namespace BetterGrenadeHandling
                         GenMapUI.DrawThingLabel(GenMapUI.LabelDrawPosFor(pawn, 0.4f), pawn.stances.curStance.ToString(), Color.yellow);
                     }
                 }
+
+                // Show dangerous positions from grid
+                Map curmap = Find.CurrentMap;
+                NativeArray<ushort> grid = DangerousGrid.GetForMap(curmap).GetOffsetGrid();
+                CellIndices cellindices = curmap.cellIndices;
+                for (int i = 0; i < grid.Length; i++)
+                {
+                    if (grid[i] == 9000)
+                    {
+                        IntVec3 pos = cellindices.IndexToCell(i);
+                        Vector2 drawpos = GenMapUI.LabelDrawPosFor(pos);
+                        GenMapUI.DrawThingLabel(drawpos, grid[i].ToString(), Color.red);
+                    }
+                }
             }
             catch (Exception ex)
             {
-                Log.Message($"[Better Grenade Handling] Exception at MapInterfaceUpdate patch: {ex}");
+                Log.Message($"[Better Grenade Handling] Exception at UIRootOnGUI patch: {ex}");
             }
         }
     }
