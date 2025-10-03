@@ -85,14 +85,14 @@ namespace BetterGrenadeHandling
         /// <summary>
         /// Check if attacker can safely ignore collateral in target's blast radius
         /// </summary>
-        public static bool CanIgnoreCollateral(Pawn attacker, Pawn collateral, Verb verb)
+        public static bool CanIgnoreCollateral(Pawn attacker, Pawn collateral, DamageDef damageDef)
         {
-            if (attacker == null || collateral == null || verb == null)
+            if (attacker == null || collateral == null || damageDef == null)
             {
                 return false;
             }
 
-            DamageDef def = verb.GetDamageDef();
+            //DamageDef def = verb.GetDamageDef();
 
             if (attacker.HostileTo(collateral))
             {
@@ -100,12 +100,12 @@ namespace BetterGrenadeHandling
             }
 
             // Ignore collateral if its heat armor exceeds required threshold (>90%)
-            if (verb.IsIncendiary_Ranged() && GetOverallArmorRating(collateral, StatDefOf.ArmorRating_Heat) > 0.9f)
+            if (damageDef.igniteCellChance > 0f && GetOverallArmorRating(collateral, StatDefOf.ArmorRating_Heat) > 0.9f)
             {
                 return true;
             }
 
-            if (def.causeStun && !BGHUtils.CanBeStunnedByDamage(collateral, def))
+            if (damageDef.causeStun && !BGHUtils.CanBeStunnedByDamage(collateral, damageDef))
             {
                 return true;
             }
