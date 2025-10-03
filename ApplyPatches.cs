@@ -18,7 +18,13 @@ namespace BetterGrenadeHandling
             var harmony = new Harmony(PACKAGE_ID);
             harmony.PatchAll();
 
-            Log.Message($"[{PACKAGE_NAME}] Loaded.");
+            string consoleMsg = $"[{PACKAGE_NAME}] Loaded.";
+
+            #if DEBUG
+            consoleMsg = consoleMsg + " Debug build.";
+            #endif
+
+            Log.Message(consoleMsg);
         }
     }
 }
