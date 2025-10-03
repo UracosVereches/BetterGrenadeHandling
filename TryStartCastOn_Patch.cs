@@ -74,7 +74,7 @@ namespace BetterGrenadeHandling
 
                 foreach (Pawn collateral in PawnsInBlastList)
                 {
-                    if (!BGHUtils.CanIgnoreCollateral(caster_pawn, collateral, verb))
+                    if (!BGHUtils.CanIgnoreCollateral(caster_pawn, collateral, verb.GetDamageDef()))
                     {
                         AttackBlacklist.AddTarget(grenadierID, targetID);
                         __result = false;

@@ -132,7 +132,7 @@ namespace BetterGrenadeHandling
                         continue;
                     }
 
-                    if (!BGHUtils.CanIgnoreCollateral(grenadier, moved_pawn, verb))
+                    if (!BGHUtils.CanIgnoreCollateral(grenadier, moved_pawn, verb.GetDamageDef()))
                     {
                         AttackBlacklist.AddTarget(grenadierID, target_thing.thingIDNumber);
                         grenadier.stances.SetStance(new Stance_Mobile()); // Cancel warmup
@@ -152,7 +152,7 @@ namespace BetterGrenadeHandling
 
                         foreach (Pawn collateral in PawnsInBlastList)
                         {
-                            if (!BGHUtils.CanIgnoreCollateral(grenadier, collateral, verb))
+                            if (!BGHUtils.CanIgnoreCollateral(grenadier, collateral, verb.GetDamageDef()))
                             {
                                 AttackBlacklist.AddTarget(grenadierID, moved_pawnID);
                                 grenadier.stances.SetStance(new Stance_Mobile()); // Cancel warmup
