@@ -23,21 +23,15 @@ namespace BetterGrenadeHandling
         // Dangerous positions per each projectile
         private static readonly ConcurrentDictionary<Projectile, HashSet<IntVec3>> dict = new ConcurrentDictionary<Projectile, HashSet<IntVec3>>();
 
-        private static int cleanup_count = 0;
-
         public static void AddProjectile(Projectile projectile, HashSet<IntVec3> positions)
         {
             dict.TryAdd(projectile, positions);
+            TryCleanUp();
 
+            // Cache positions in global allDangerousPositions HashSet
             foreach (IntVec3 pos in positions)
             {
                 AddDangerousPosition(pos);
-            }
-
-            cleanup_count++;
-            if (cleanup_count > 100)
-            {
-                CleanUp();
             }
         }
 
@@ -86,6 +80,11 @@ namespace BetterGrenadeHandling
             return false;
         }
 
+        public static bool CanObtainAnything()
+        {
+            return dict.Any();
+        }
+
         public static List<IntVec3> ObtainDangerousPositionsFor(Pawn pawn)
         {
             HashSet<IntVec3> obtained_positions = new HashSet<IntVec3>();
@@ -113,8 +112,17 @@ namespace BetterGrenadeHandling
             return new ConcurrentDictionary<Projectile, HashSet<IntVec3>>(dict);
         }
 
-        public static void CleanUp()
+        private static int cleanup_count = 0;
+        public static void TryCleanUp()
         {
+            cleanup_count++;
+            if (cleanup_count < 100)
+            {
+                return;
+            }
+
+            cleanup_count = 0;
+
             foreach (var kvp in dict)
             {
                 var value = kvp.Key;
@@ -217,6 +225,11 @@ namespace BetterGrenadeHandling
 
         public void ResetPreviousDangerList()
         {
+            if (this.previousDangerList.Empty())
+            {
+                return;
+            }
+
             CellIndices cellindices = map.cellIndices;
             foreach (IntVec3 pos in this.previousDangerList)
             {
@@ -230,8 +243,8 @@ namespace BetterGrenadeHandling
 
             if (!found)
             {
-                DangerousGrid newgrid = new DangerousGrid(map);
-                dangerousGridCache.Add(map, newgrid);
+                grid = new DangerousGrid(map);
+                dangerousGridCache.Add(map, grid);
             }
 
             return grid;
@@ -239,14 +252,24 @@ namespace BetterGrenadeHandling
 
         public void UpdateForPawn(Pawn pawn)
         {
-            List<IntVec3> dangerVecs = DangerPositionTracker.ObtainDangerousPositionsFor(pawn);
-
             this.ResetPreviousDangerList();
 
+            // Danger position dicitonary is empty. Bail out early.
+            if (!DangerPositionTracker.CanObtainAnything())
+            {
+                return;
+            }
+
+            List<IntVec3> dangerVecs = DangerPositionTracker.ObtainDangerousPositionsFor(pawn);
+
+            // Precache map variables to avoid calling them repeatedly inside the loop
             CellIndices cellindices = map.cellIndices;
+            Pathing pathing = map.pathing;
+
             foreach (IntVec3 pos in dangerVecs)
             {
                 this.array[cellindices.CellToIndex(pos)] = 9000;
+                pathing.RecalculatePerceivedPathCostAt(pos);
             }
 
             this.previousDangerList = dangerVecs;
@@ -273,10 +296,15 @@ namespace BetterGrenadeHandling
             // If found danger - check if it's visible for a pawn
             if (isPosDangerous)
             {
-                return DangerPositionTracker.IsDangerVisibleFor(c, forPawn);
+                bool isDangerVisible = DangerPositionTracker.IsDangerVisibleFor(c, forPawn);
+
+                __result = isDangerVisible;
+                // Skip the original method
+                return false;
             }
 
-            return false;
+            // Let the original method take over
+            return true;
         }
     }
 
