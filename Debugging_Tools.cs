@@ -77,9 +77,10 @@ namespace BetterGrenadeHandling
                 // Show dangerous positions
                 foreach (var kvp in DangerPositionTracker.GetDictionary())
                 {
-                    IntVec3 pos = kvp.Key;
-
-                    GenDraw.DrawRadiusRing(pos, 0.5f, Color.yellow);
+                    foreach (IntVec3 pos in kvp.Value)
+                    {
+                        GenDraw.DrawRadiusRing(pos, 0.5f, Color.yellow);
+                    }
                 }
             }
             catch (Exception ex)
