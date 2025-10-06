@@ -136,6 +136,14 @@ namespace BetterGrenadeHandling
                         GenMapUI.DrawThingLabel(drawpos, grid[i].ToString(), Color.red);
                     }
                 }
+
+                // Show every dangerous position from global dictionary (not tied to projectiles)
+                foreach (var kvp in DangerPositionTracker.GetAllDangerousPositions())
+                {
+                    Vector2 drawpos = GenMapUI.LabelDrawPosFor(kvp.Key);
+                    drawpos.y = drawpos.y - 0.8f;
+                    GenMapUI.DrawThingLabel(drawpos, "Danger", Color.yellow);
+                }
             }
             catch (Exception ex)
             {

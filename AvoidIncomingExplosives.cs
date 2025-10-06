@@ -169,6 +169,12 @@ namespace BetterGrenadeHandling
             }
 
         }
+
+        public static Dictionary<IntVec3, int> GetAllDangerousPositions()
+        {
+            Dictionary<IntVec3, int> copy = new Dictionary<IntVec3, int>(allDangerousPositions);
+            return copy;
+        }
     }
 
     // Custom cell grid constructor for dangerous positions
@@ -290,6 +296,12 @@ namespace BetterGrenadeHandling
     {
         static bool Prefix(IntVec3 c, Map map, Pawn forPawn, ref bool __result)
         {
+            if (map == null)
+                return true;
+
+            if (!(forPawn is Pawn))
+                return true;
+
             // Lookup if position has any danger in a hashset
             bool isPosDangerous = DangerPositionTracker.IsPositionDangerous(c);
             
