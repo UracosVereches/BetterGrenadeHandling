@@ -56,20 +56,13 @@ namespace BetterGrenadeHandling
     {
         static void Postfix(IAttackTargetSearcher th, ref List<IAttackTarget> __result)
         {
-            try
-            {
-                Thing attacker = th.Thing;
-                int attacker_id = attacker.thingIDNumber;
+            Thing attacker = th.Thing;
+            int attacker_id = attacker.thingIDNumber;
 
-                if (AttackBlacklist.HasAttacker(attacker_id))
-                {
-                    ConcurrentDictionary<int, byte> restrictedtargets = AttackBlacklist.GetDictionary(attacker_id);
-                    __result.RemoveAll(t => restrictedtargets.ContainsKey(t.Thing.thingIDNumber));
-                }
-            }
-            catch (Exception ex)
+            if (AttackBlacklist.HasAttacker(attacker_id))
             {
-                Log.Error($"[BGH] Exception in Stance_Warmup: {ex}");
+                ConcurrentDictionary<int, byte> restrictedtargets = AttackBlacklist.GetDictionary(attacker_id);
+                __result.RemoveAll(t => restrictedtargets.ContainsKey(t.Thing.thingIDNumber));
             }
         }
     }
