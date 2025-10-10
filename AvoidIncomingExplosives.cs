@@ -39,8 +39,10 @@ namespace BetterGrenadeHandling
         {
             dict.TryRemove(projectile, out HashSet<IntVec3> positionsToBeRemoved);
 
+            Pathing pathing = projectile.Map?.pathing;
             foreach (IntVec3 pos in positionsToBeRemoved)
             {
+                pathing.RecalculatePerceivedPathCostAt(pos);
                 RemoveDangerousPosition(pos);
             }
         }
@@ -71,7 +73,7 @@ namespace BetterGrenadeHandling
                 if (launcher == null)
                     continue;
 
-                if (!BGHUtils.CanIgnoreCollateral(launcher, pawn, damageDef))
+                if (!launcher.CanIgnoreCollateral(pawn, damageDef, projectile.def.projectile.ai_IsIncendiary))
                 {
                     return true;
                 }
@@ -98,7 +100,7 @@ namespace BetterGrenadeHandling
                 if (launcher == null)
                     continue;
 
-                if (!BGHUtils.CanIgnoreCollateral(launcher, pawn, damageDef))
+                if (!launcher.CanIgnoreCollateral(pawn, damageDef, projectile.def.projectile.ai_IsIncendiary))
                 {
                     obtained_positions.UnionWith(positions);
                 }
@@ -107,13 +109,18 @@ namespace BetterGrenadeHandling
             return obtained_positions.ToList();
         }
 
+        public static bool TryGetProjectilePositions(Projectile projectile, out HashSet<IntVec3> dangerVecs)
+        {
+            return dict.TryGetValue(projectile, out dangerVecs);
+        }
+
         public static ConcurrentDictionary<Projectile, HashSet<IntVec3>> GetDictionary()
         {
             return new ConcurrentDictionary<Projectile, HashSet<IntVec3>>(dict);
         }
 
         private static int cleanup_count = 0;
-        public static void TryCleanUp()
+        private static void TryCleanUp()
         {
             cleanup_count++;
             if (cleanup_count < 100)
@@ -302,6 +309,12 @@ namespace BetterGrenadeHandling
             if (!(forPawn is Pawn))
                 return true;
 
+            // Too dumb to grasp the dangers of explosives
+            if ((int)forPawn.RaceProps.intelligence < 2)
+            {
+                return true;
+            }
+
             // Lookup if position has any danger in a hashset
             bool isPosDangerous = DangerPositionTracker.IsPositionDangerous(c);
             
@@ -333,6 +346,12 @@ namespace BetterGrenadeHandling
             PathRequest __instance, Map map, IntVec3 start, LocalTargetInfo dest, IntVec3? exactDestination, TraverseParms traverseParms, PathFinderCostTuning tuning,
             PathEndMode peMode, Pawn pawn, int tickCreated, int tickStart, int tickDeadline, ref IPathGridCustomizer customizer)
         {
+            // Too dumb to grasp the dangers of explosives
+            if ((int)pawn.RaceProps.intelligence < 2)
+            {
+                return;
+            }
+
             DangerousGrid dangerGrid = DangerousGrid.GetForMap(map);
             dangerGrid.UpdateForPawn(pawn);
 
@@ -366,12 +385,34 @@ namespace BetterGrenadeHandling
             float blastradius = projectile.def?.projectile?.explosionRadius ?? 0f;
             IntVec3 usedCell = usedTarget.Cell;
 
+            Map map = launcher.Map;
+
             // Create a HashSet of dangerous positions with usedCell included initially
-            HashSet<IntVec3> dangerousPositions = new HashSet<IntVec3>{usedCell};
+            HashSet<IntVec3> dangerousPositions = new HashSet<IntVec3>{usedCell}; // usedCell - add center
             foreach (IntVec3 pos in GenRadial.RadialCellsAround(usedCell, blastradius, true))
             {
                 dangerousPositions.Add(pos);
             }
+
+            // Force flee pawns from dangerous positions
+            foreach (IntVec3 pos in dangerousPositions)
+            {
+                foreach (Thing thing in pos.GetThingList(map))
+                {
+                    if (!(thing is Pawn pawn))
+                    {
+                        continue;
+                    }
+
+                    if (launcher is Pawn launcherPawn && launcherPawn.CanIgnoreCollateral(pawn, projectile.DamageDef, projectile.def.projectile.ai_IsIncendiary))
+                    {
+                        continue;
+                    }
+
+                    pawn.ForceFleeFromExplosion(usedCell, BGHUtils.ExpandBlastRadius(blastradius));
+                }
+            }
+
             DangerPositionTracker.AddProjectile(projectile, dangerousPositions);
         }
     }
@@ -381,11 +422,9 @@ namespace BetterGrenadeHandling
     [HarmonyPatch("Destroy")]
     static class Patch_Thing_Destroy_Postfix
     {
-        static void Postfix(Thing __instance)
+        static void Prefix(Thing __instance)
         {
             if (!(__instance is Projectile_Explosive explosive)) return;
-            float blastradius = explosive.def?.projectile?.explosionRadius ?? 0f;
-            IntVec3 usedCell = explosive.usedTarget.Cell;
 
             DangerPositionTracker.RemoveProjectile(explosive);
         }
