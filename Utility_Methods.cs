@@ -1,7 +1,11 @@
-﻿using RimWorld;
+﻿using LudeonTK;
+using RimWorld;
 using System.Collections.Generic;
+using System.Linq;
+using Unity.Jobs.LowLevel.Unsafe;
 using UnityEngine;
 using Verse;
+using Verse.AI;
 
 
 namespace BetterGrenadeHandling
@@ -12,17 +16,17 @@ namespace BetterGrenadeHandling
          * Ripped out directly from RimWorld.StunHandler.CanBeStunnedByDamage(DamageDef def) 
          * TODO: cache. update it every 30 calls or so.
          * This method is very likely to change in future updates */
-        private static bool CanBeStunnedByDamage(Pawn pawn, DamageDef def)
+        private static bool CanBeStunnedByDamage(this Pawn pawn, DamageDef def)
         {
             if (!def.causeStun)
             {
                 return false;
             }
-            // Can't figure it out
-            //if (stunnableComp != null && !stunnableComp.CanBeStunnedByDamage(def))
-            //{
-            //return false;
-            //}
+            CompStunnable stunnableComp = pawn.TryGetComp<CompStunnable>();
+            if (stunnableComp != null && !stunnableComp.CanBeStunnedByDamage(def))
+            {
+                return false;
+            }
             if (pawn.Downed || pawn.Dead)
             {
                 return false;
@@ -51,10 +55,10 @@ namespace BetterGrenadeHandling
         }
 
         /*
-         * Ripped out directly from RimWorld.ITab_Pawn_Gear.TryDrawOverallArmor(ref float curY, float width, StatDef stat, string label)
+         * Ripped out directly from RimWorld.ITab_Pawn_Gear.TryDrawOverallArmor(ref float curY, float width, StatDef stat, string label
          * TODO: Cache results in a list when entry for a pawn is null. If there is an entry, change the result on ApparelChanged only
          * This method is very likely to change in future updates */
-        private static float GetOverallArmorRating(Pawn pawn, StatDef stat)
+        private static float GetOverallArmorRating(this Pawn pawn, StatDef stat)
         {
             float num = 0f;
             float num2 = Mathf.Clamp01(pawn.GetStatValue(StatDefOf.ArmorRating_Heat) / 2f);
@@ -85,7 +89,7 @@ namespace BetterGrenadeHandling
         /// <summary>
         /// Check if attacker can safely ignore collateral in target's blast radius
         /// </summary>
-        public static bool CanIgnoreCollateral(Pawn attacker, Pawn collateral, DamageDef damageDef)
+        public static bool CanIgnoreCollateral(this Pawn attacker, Pawn collateral, DamageDef damageDef, bool isIncendiary = false)
         {
             if (attacker == null || collateral == null || damageDef == null)
             {
@@ -99,13 +103,17 @@ namespace BetterGrenadeHandling
                 return true;
             }
 
-            // Ignore collateral if its heat armor exceeds required threshold (>90%)
-            if (damageDef.igniteCellChance > 0f && GetOverallArmorRating(collateral, StatDefOf.ArmorRating_Heat) > 0.9f)
+            // Ignore collateral if its flammability less than 10% or heat armor exceeds required threshold (>90%)
+            // Although flammability and heat armor sound similar - they're not the same
+            // Flammability - how likely you are to catch on fire
+            // Heat armor - how resistant you are to burn when you catch on fire
+            // You could wear a full devilstrand set, but you'd catch fire just as often as without it
+            if (isIncendiary && (collateral.GetStatValue(StatDefOf.Flammability) < 0.1f || collateral.GetOverallArmorRating(StatDefOf.ArmorRating_Heat) > 0.9f))
             {
                 return true;
             }
 
-            if (damageDef.causeStun && !BGHUtils.CanBeStunnedByDamage(collateral, damageDef))
+            if (damageDef.causeStun && !collateral.CanBeStunnedByDamage(damageDef))
             {
                 return true;
             }
@@ -133,7 +141,7 @@ namespace BetterGrenadeHandling
         /// <summary>
         /// Get list of pawns in radius around pawn
         /// </summary>
-        public static List<Pawn> GetPawnsInRadius(Pawn pawn, float radius)
+        public static List<Pawn> GetPawnsInRadius(this Pawn pawn, float radius)
         {
             List<Pawn> pawnsList = new List<Pawn>();
 
@@ -163,6 +171,30 @@ namespace BetterGrenadeHandling
             }
 
             return pawnsList;
+        }
+
+        public static void ForceFleeFromExplosion(this Pawn pawn, IntVec3 explosionPos, float blastRadius)
+        {
+            if ((int)pawn.RaceProps.intelligence < 2)
+            {
+                return;
+            }
+            if (pawn.Downed && !pawn.health.CanCrawl)
+            {
+                return;
+            }
+            if ((float)(pawn.Position - explosionPos).LengthHorizontalSquared > 81f)
+            {
+                return;
+            }
+            if (!RCellFinder.TryFindDirectFleeDestination(explosionPos, blastRadius, pawn, out var result))
+            {
+                return;
+            }
+
+            Job job = JobMaker.MakeJob(JobDefOf.Goto, result);
+            job.locomotionUrgency = LocomotionUrgency.Sprint;
+            pawn.jobs.TryTakeOrderedJob(job, JobTag.Misc);
         }
     }
 }
