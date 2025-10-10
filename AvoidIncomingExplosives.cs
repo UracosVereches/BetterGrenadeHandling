@@ -310,7 +310,7 @@ namespace BetterGrenadeHandling
                 return true;
 
             // Too dumb to grasp the dangers of explosives
-            if ((int)forPawn.RaceProps.intelligence < 2)
+            if (forPawn.RaceProps?.intelligence != null && (int)forPawn.RaceProps.intelligence < 2)
             {
                 return true;
             }
@@ -347,7 +347,7 @@ namespace BetterGrenadeHandling
             PathEndMode peMode, Pawn pawn, int tickCreated, int tickStart, int tickDeadline, ref IPathGridCustomizer customizer)
         {
             // Too dumb to grasp the dangers of explosives
-            if ((int)pawn.RaceProps.intelligence < 2)
+            if (pawn?.RaceProps?.intelligence != null && (int)pawn.RaceProps.intelligence < 2)
             {
                 return;
             }
