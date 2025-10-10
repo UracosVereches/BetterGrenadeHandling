@@ -111,7 +111,7 @@ namespace BetterGrenadeHandling
                     }
 
                     // If melee or attack was forced by player
-                    if (grenadier.CurJob == null || grenadier.CurJob.playerForced || verb.IsMeleeAttack || target_thing == null)
+                    if (grenadier.CurJob == null || grenadier.CurJob.playerForced || verb.IsMeleeAttack)
                     {
                         AttackBlacklist.RemoveAttacker(grenadierID);
                         continue;
@@ -132,7 +132,7 @@ namespace BetterGrenadeHandling
                         continue;
                     }
 
-                    if (!BGHUtils.CanIgnoreCollateral(grenadier, moved_pawn, verb.GetDamageDef()))
+                    if (!grenadier.CanIgnoreCollateral(moved_pawn, verb.GetDamageDef(), verb.IsIncendiary_Ranged()))
                     {
                         AttackBlacklist.AddTarget(grenadierID, target_thing.thingIDNumber);
                         grenadier.stances.SetStance(new Stance_Mobile()); // Cancel warmup
@@ -143,7 +143,7 @@ namespace BetterGrenadeHandling
                     if (moved_pawn == target_thing)
                     {
                         List<Pawn> PawnsInBlastList = new List<Pawn>();
-                        PawnsInBlastList = BGHUtils.GetPawnsInRadius(target.Pawn, expanded_blastradius);
+                        PawnsInBlastList = target.Pawn.GetPawnsInRadius(expanded_blastradius);
                         if (PawnsInBlastList.NullOrEmpty())
                         {
                             AttackBlacklist.RemoveAttacker(grenadierID);
@@ -152,7 +152,7 @@ namespace BetterGrenadeHandling
 
                         foreach (Pawn collateral in PawnsInBlastList)
                         {
-                            if (!BGHUtils.CanIgnoreCollateral(grenadier, collateral, verb.GetDamageDef()))
+                            if (!grenadier.CanIgnoreCollateral(collateral, verb.GetDamageDef(), verb.IsIncendiary_Ranged()))
                             {
                                 AttackBlacklist.AddTarget(grenadierID, moved_pawnID);
                                 grenadier.stances.SetStance(new Stance_Mobile()); // Cancel warmup
