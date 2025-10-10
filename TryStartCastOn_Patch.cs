@@ -1,4 +1,5 @@
 ﻿using HarmonyLib;
+using RimWorld;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -64,7 +65,7 @@ namespace BetterGrenadeHandling
                 float expanded_blastradius = BGHUtils.ExpandBlastRadius(blastradius);
 
                 List<Pawn> PawnsInBlastList = new List<Pawn>();
-                PawnsInBlastList = BGHUtils.GetPawnsInRadius(target_pawn, expanded_blastradius);
+                PawnsInBlastList = target_pawn.GetPawnsInRadius(expanded_blastradius);
 
                 if (PawnsInBlastList.NullOrEmpty())
                 {
@@ -74,7 +75,7 @@ namespace BetterGrenadeHandling
 
                 foreach (Pawn collateral in PawnsInBlastList)
                 {
-                    if (!BGHUtils.CanIgnoreCollateral(caster_pawn, collateral, verb.GetDamageDef()))
+                    if (!caster_pawn.CanIgnoreCollateral(collateral, verb.GetDamageDef(), verb.IsIncendiary_Ranged()))
                     {
                         AttackBlacklist.AddTarget(grenadierID, targetID);
                         __result = false;
