@@ -141,7 +141,7 @@ namespace BetterGrenadeHandling
                 foreach (var kvp in DangerPositionTracker.GetAllDangerousPositions())
                 {
                     Vector2 drawpos = GenMapUI.LabelDrawPosFor(kvp.Key);
-                    drawpos.y = drawpos.y - 0.8f;
+                    drawpos.y = drawpos.y - 16f;
                     GenMapUI.DrawThingLabel(drawpos, "Danger", Color.yellow);
                 }
             }
