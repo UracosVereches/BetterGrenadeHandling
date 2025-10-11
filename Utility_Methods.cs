@@ -103,7 +103,7 @@ namespace BetterGrenadeHandling
                 return true;
             }
 
-            // Ignore collateral if its flammability less than 10% or heat armor exceeds required threshold (>90%)
+            // Ignore friendly collateral if its flammability less than 10% or heat armor exceeds required threshold (>90%)
             // Although flammability and heat armor sound similar - they're not the same
             // Flammability - how likely you are to catch on fire
             // Heat armor - how resistant you are to burn when you catch on fire
@@ -113,6 +113,7 @@ namespace BetterGrenadeHandling
                 return true;
             }
 
+            // Ignore if weapon causes stun damage and friendly collateral can't be stunned
             if (damageDef.causeStun && !collateral.CanBeStunnedByDamage(damageDef))
             {
                 return true;
@@ -173,6 +174,9 @@ namespace BetterGrenadeHandling
             return pawnsList;
         }
 
+        /// <summary>
+        /// Force pawn to flee from explosion
+        /// </summary>
         public static void ForceFleeFromExplosion(this Pawn pawn, IntVec3 explosionPos, float blastRadius)
         {
             if ((int)pawn.RaceProps.intelligence < 2)
@@ -195,6 +199,17 @@ namespace BetterGrenadeHandling
             Job job = JobMaker.MakeJob(JobDefOf.Goto, result);
             job.locomotionUrgency = LocomotionUrgency.Sprint;
             pawn.jobs.TryTakeOrderedJob(job, JobTag.Misc);
+        }
+
+        /// <summary>
+        /// Check if this target is stunned already. Return false if verb is EMP and target is stunned. Always returns true if verb is not EMP
+        /// </summary>
+        public static bool ShouldBeHitByEMP(this Thing target, Verb verb)
+        {
+            Pawn targetPawn = target as Pawn;
+
+            // Always return true if verb is not EMP
+            return verb.IsEMP() ? targetPawn?.stances?.stunner?.Stunned == false : true;
         }
     }
 }
