@@ -4,7 +4,9 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Security.Cryptography;
 using HarmonyLib;
+using RimWorld;
 using Verse;
+using Verse.AI;
 using static UnityEngine.GraphicsBuffer;
 
 namespace BetterGrenadeHandling
@@ -42,21 +44,6 @@ namespace BetterGrenadeHandling
                 return new List<Pawn>(WarmupGrenadiersList);
             }
         }
-
-        //TODO: cleanup every 20 add calls
-        /*
-        public static void Cleanup()
-        {
-            lock (sync)
-            {
-                var toremove = new List<Pawn>();
-                foreach (var entry in WarmupGrenadiersList)
-                {
-                    if (e == null || e.pawn == null || e.pawn.Dead || e.pawn.Map == null) toRemove.Add(kv.Key)
-                }
-            }
-        }
-        */
     }
 
     public static class StandByGrenadiers
@@ -135,6 +122,38 @@ namespace BetterGrenadeHandling
             catch (Exception ex)
             {
                 Log.Error($"[Better Grenade Handling] Exception in SetStance: {ex}");
+            }
+        }
+    }
+
+    // Remove from lists when pawn is destroyed
+    [HarmonyPatch(typeof(Thing))]
+    [HarmonyPatch("Destroy")]
+    static class GrenadierTracker_Patch_Thing_Destroy_Prefix
+    {
+        static void Prefix(Thing __instance)
+        {
+            if (!(__instance is Pawn pawn)) return;
+
+            StandByGrenadiers.Remove(pawn);
+            WarmupGrenadiers.Remove(pawn);
+        }
+    }
+
+    // Remove from lists when pawn is not in combat anymore
+    [HarmonyPatch(typeof(Pawn_MindState), "MindStateTickInterval")]
+    public static class MindStateTickInterval_Patch
+    {
+        // Postfix method that runs after the original method
+        public static void Postfix(Pawn_MindState __instance, int delta)
+        {
+            Pawn pawn = __instance.pawn;
+
+            // Not in combat anymore - remove
+            if (!__instance.anyCloseHostilesRecently)
+            {
+                StandByGrenadiers.Remove(pawn);
+                WarmupGrenadiers.Remove(pawn);
             }
         }
     }
