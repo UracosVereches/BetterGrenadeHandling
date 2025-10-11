@@ -420,7 +420,7 @@ namespace BetterGrenadeHandling
     // Remove dangerous positions when explosive is destroyed
     [HarmonyPatch(typeof(Thing))]
     [HarmonyPatch("Destroy")]
-    static class Patch_Thing_Destroy_Postfix
+    static class Patch_Thing_Destroy_Prefix
     {
         static void Prefix(Thing __instance)
         {
