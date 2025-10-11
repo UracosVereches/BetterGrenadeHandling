@@ -54,6 +54,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AvoidIncomingExplosives.cs" />
+    <Compile Include="TargetSearchingConditions.cs" />
     <Compile Include="Debugging_Tools.cs" />
     <Compile Include="TrajectoryPrediction.cs" />
     <Compile Include="Verb_Cache.cs" />
