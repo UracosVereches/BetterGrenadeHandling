@@ -202,14 +202,14 @@ namespace BetterGrenadeHandling
         }
 
         /// <summary>
-        /// Check if this target is stunned already. Return false if verb is EMP and target is stunned. Always returns true if verb is not EMP
+        /// Check if this target is EMP stunned already. Return false if verb is EMP and target is EMP stunned. Always returns true if verb is not EMP
         /// </summary>
         public static bool ShouldBeHitByEMP(this Thing target, Verb verb)
         {
             Pawn targetPawn = target as Pawn;
 
             // Always return true if verb is not EMP
-            return verb.IsEMP() ? targetPawn?.stances?.stunner?.Stunned == false : true;
+            return VerbCache.IsVerbEMP(verb) ? targetPawn?.stances?.stunner?.StunFromEMP == false : true;
         }
     }
 }

@@ -1,25 +1,47 @@
 ﻿using HarmonyLib;
+using RimWorld;
+using RimWorld.Planet;
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using Verse;
 
 namespace BetterGrenadeHandling
 {
+    // Very easy to implement cache utility to efficiently look up verb parameters.
+    // Something the base game should definitely take advantage of
     public static class VerbCache
     {
-        private static readonly ConcurrentDictionary<Pawn, Verb> PawnVerb = new ConcurrentDictionary<Pawn, Verb>();
-        private static readonly ConcurrentDictionary<Verb, float> VerbRadius = new ConcurrentDictionary<Verb, float>();
-        private static readonly ConcurrentDictionary<Verb, float> VerbRange = new ConcurrentDictionary<Verb, float>();
+        private static readonly ConcurrentDictionary<Pawn, Verb> dPawn_Verb = new ConcurrentDictionary<Pawn, Verb>();
+        private static readonly ConcurrentDictionary<Verb, float> dVerb_fBlastRadius = new ConcurrentDictionary<Verb, float>();
+        private static readonly ConcurrentDictionary<Verb, float> dVerb_fRange = new ConcurrentDictionary<Verb, float>();
+        private static readonly ConcurrentDictionary<Verb, bool> dVerb_bEMP = new ConcurrentDictionary<Verb, bool>();
+
+        // For cleanup
+        // Always remember to put new dictionaries in here
+        private static void RemovePawnFromCache(Pawn pawn)
+        {
+            bool foundVerb = dPawn_Verb.TryRemove(pawn, out Verb verb);
+
+            if (!foundVerb)
+            {
+                return;
+            }
+
+            dVerb_fBlastRadius.TryRemove(verb, out _);
+            dVerb_fRange.TryRemove(verb, out _);
+            dVerb_bEMP.TryRemove(verb, out _);
+        }
 
         public static Verb GetCurrentEffectiveVerb(Pawn pawn)
         {
-            bool found_verb = PawnVerb.TryGetValue(pawn, out Verb verb);
+            bool found_verb = dPawn_Verb.TryGetValue(pawn, out Verb verb);
 
             if (!found_verb || verb == null)
             {
                 // Verb not found or null in dictionary, create new entry
                 verb = pawn.CurrentEffectiveVerb;
-                PawnVerb[pawn] = verb;
+                dPawn_Verb[pawn] = verb;
                 return verb;
             }
 
@@ -29,7 +51,7 @@ namespace BetterGrenadeHandling
         // Directly ripped out from Verse.VerbUtility.UsesExplosiveProjectiles(this Verb verb)
         public static float GetVerbBlastRadius(Verb verb)
         {
-            bool found_radius = VerbRadius.TryGetValue(verb, out float radius);
+            bool found_radius = dVerb_fBlastRadius.TryGetValue(verb, out float radius);
 
             if (!found_radius)
             {
@@ -40,7 +62,7 @@ namespace BetterGrenadeHandling
                 {
                     radius = projectile.projectile.explosionRadius;
                 }
-                VerbRadius[verb] = radius;
+                dVerb_fBlastRadius[verb] = radius;
 
                 return radius;
             }
@@ -50,13 +72,13 @@ namespace BetterGrenadeHandling
 
         public static float GetVerbRange(Verb verb)
         {
-            bool found_range = VerbRange.TryGetValue(verb, out float range);
+            bool found_range = dVerb_fRange.TryGetValue(verb, out float range);
 
             if (!found_range)
             {
                 //Verb range not found in dictionary, create new entry
                 range = verb.EffectiveRange;
-                VerbRange[verb] = range;
+                dVerb_fRange[verb] = range;
 
                 return range;
             }
@@ -64,21 +86,33 @@ namespace BetterGrenadeHandling
             return range;
         }
 
+        public static bool IsVerbEMP(Verb verb)
+        {
+            bool found_EMP = dVerb_bEMP.TryGetValue(verb, out bool isEMP);
+
+            if (!found_EMP)
+            {
+                //Verb range not found in dictionary, create new entry
+                isEMP = verb.IsEMP();
+                dVerb_bEMP[verb] = isEMP;
+
+                return isEMP;
+            }
+
+            return isEMP;
+        }
+
         // Called for every dictionary
         // Remove stale entries when new weapon is equipped
         public static void Notify_VerbChanged(Pawn pawn)
         {
-            bool found_verb = PawnVerb.TryGetValue(pawn, out Verb verb);
-
-            if (found_verb)
-            {
-                VerbRadius.TryRemove(verb, out _);
-                VerbRange.TryRemove(verb, out _);
-                PawnVerb.TryRemove(pawn, out _);
-            }
+            RemovePawnFromCache(pawn);
         }
 
-        // TODO: remove stale pawn entries(dead, passed to world)
+        public static void CleanUpPawn(Pawn pawn)
+        {
+            RemovePawnFromCache(pawn);
+        }
     }
 
     [HarmonyPatch(typeof(Pawn_EquipmentTracker))]
@@ -97,4 +131,42 @@ namespace BetterGrenadeHandling
             }
         }
     }
+
+    [HarmonyPatch(typeof(Pawn), "Kill",
+    new Type[] { typeof(DamageInfo?), typeof(Hediff) })]
+    public static class Pawn_Kill_Patch
+    {
+        static void Postfix(Pawn __instance, DamageInfo? dinfo, Hediff exactCulprit)
+        {
+            // Pawn is still alive
+            if (!__instance.Dead)
+            {
+                return;
+            }
+
+            VerbCache.CleanUpPawn(__instance);
+        }
+    }
+
+    [HarmonyPatch(typeof(WorldPawns), "PassToWorld",
+    new Type[] { typeof(Pawn), typeof(PawnDiscardDecideMode) })]
+    public static class WorldPawns_PassToWorld_Patch
+    {
+        static void Postfix(Pawn pawn, PawnDiscardDecideMode discardMode = PawnDiscardDecideMode.Decide)
+        {
+            VerbCache.CleanUpPawn(pawn);
+        }
+    }
+
+    [HarmonyPatch(typeof(Thing))]
+    [HarmonyPatch("Destroy")]
+    public static class VerbCache_Patch_Thing_Destroy_Prefix
+    {
+        static void Prefix(Thing __instance)
+        {
+            if (!(__instance is Pawn pawn)) return;
+
+            VerbCache.CleanUpPawn(pawn);
+        }
+    } 
 }
