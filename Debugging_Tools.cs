@@ -22,6 +22,28 @@ namespace BetterGrenadeHandling
                 List<Pawn> standby_grenadiers = new List<Pawn>(StandByGrenadiers.GetList());
                 List<Pawn> warmup_grenadiers = new List<Pawn>(WarmupGrenadiers.GetList());
 
+                // Show real positions of every pawn
+                foreach (Pawn pawn in map.mapPawns.AllPawnsSpawned)
+                {
+                    IntVec3 pos = pawn.Position;
+                    if (!(standby_grenadiers.Contains(pawn)) && !(warmup_grenadiers.Contains(pawn)))
+                    {
+                        GenDraw.DrawRadiusRing(pos, 0.5f, Color.gray);
+                    }
+
+                    // Draw attack blacklist in white lines in case pawn doesn't belong to any of grenadier lists
+                    foreach (var keyvalue in AttackBlacklist.GetDictionary(pawn.thingIDNumber))
+                    {
+                        int pawnID = keyvalue.Key;
+                        IntVec3 targetpos = Debug_ThingID_PositionCache.GetPos(pawnID);
+                        if (targetpos == IntVec3.Zero)
+                        {
+                            continue;
+                        }
+                        GenDraw.DrawLineBetween(pawn.Position.ToVector3Shifted(), targetpos.ToVector3Shifted(), SimpleColor.White, 0.2f);
+                    }
+                }
+
                 // Show standby grenadiers
                 foreach (Pawn pawn in standby_grenadiers)
                 {
@@ -62,16 +84,6 @@ namespace BetterGrenadeHandling
                             }
                             GenDraw.DrawLineBetween(pawn.Position.ToVector3Shifted(), targetpos.ToVector3Shifted(), SimpleColor.Red, 0.2f);
                         }
-                    }
-                }
-
-                // Show real positions of every pawn
-                foreach (Pawn pawn in map.mapPawns.AllPawnsSpawned)
-                {
-                    IntVec3 pos = pawn.Position;
-                    if (!(standby_grenadiers.Contains(pawn)) && !(warmup_grenadiers.Contains(pawn)))
-                    {
-                        GenDraw.DrawRadiusRing(pos, 0.5f, Color.gray);
                     }
                 }
 
