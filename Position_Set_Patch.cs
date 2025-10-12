@@ -3,6 +3,7 @@ using HarmonyLib;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using UnityEngine;
 using Verse;
@@ -65,13 +66,25 @@ namespace BetterGrenadeHandling
 
                 // Iterate over idle grenadiers (Drafted || In combat && No target)
                 // Cleanup stale entries in AttackBlacklist on grenadiers that are waiting for an attack
-                foreach (var waiting_grenadier in StandByGrenadiers.GetList())
+                ReadOnlyCollection<Pawn> waitingGrenadiersList = StandByGrenadiers.GetList();
+                for (var i = 0; i < waitingGrenadiersList.Count; i++)
                 {
+                    Pawn waiting_grenadier = waitingGrenadiersList[i];
+
                     if (waiting_grenadier == null)
                     {
                         continue;
                     }
+
                     int waiting_grenadierID = waiting_grenadier.thingIDNumber;
+                    Verb verb = VerbCache.GetCurrentEffectiveVerb(waiting_grenadier);
+                    float verb_range = VerbCache.GetVerbRange(verb);
+
+                    // If moved thing is outside of grenadier's weapon range - ignore
+                    if (moved_pawn_pos.DistanceToSquared(waiting_grenadier.Position) >= (verb_range * verb_range))
+                    {
+                        continue;
+                    }
 
                     // Just remove grenadier from blacklist completely since we don't know the target
                     // Because waiting grenadiers don't have any yet
@@ -79,8 +92,10 @@ namespace BetterGrenadeHandling
                 }
 
                 // Iterate over every grenadier who is aiming right now
-                foreach (var grenadier in WarmupGrenadiers.GetSnapshot())
+                List<Pawn> warmupGrenadiersList = WarmupGrenadiers.GetSnapshot();
+                for (var i = 0; i < warmupGrenadiersList.Count; i++)
                 {
+                    Pawn grenadier = warmupGrenadiersList[i];
                     if (grenadier == null)
                     {
                         continue;
@@ -110,13 +125,14 @@ namespace BetterGrenadeHandling
                         continue;
                     }
 
-                    // If melee or attack was forced by player
+                    // Continue to next grenadier if melee or attack was forced by player
                     if (grenadier.CurJob == null || grenadier.CurJob.playerForced || verb.IsMeleeAttack)
                     {
                         AttackBlacklist.RemoveAttacker(grenadierID);
                         continue;
                     }
 
+                    // Continue to next grenadier if blast radius = 0
                     float blastradius = VerbCache.GetVerbBlastRadius(verb);
                     if (blastradius == 0f)
                     {
@@ -124,6 +140,9 @@ namespace BetterGrenadeHandling
                         continue;
                     }
 
+                    // Precache parameters
+                    DamageDef verbDmgDef = verb.GetDamageDef();
+                    bool verbIsIncendiary = verb.IsIncendiary_Ranged();
                     float expanded_blastradius = BGHUtils.ExpandBlastRadius(blastradius);
 
                     // Assume that moved thing is ally. Compare ally's distance to grenadier's current target
@@ -132,7 +151,7 @@ namespace BetterGrenadeHandling
                         continue;
                     }
 
-                    if (!grenadier.CanIgnoreCollateral(moved_pawn, verb.GetDamageDef(), verb.IsIncendiary_Ranged()))
+                    if (!grenadier.CanIgnoreCollateral(moved_pawn, verbDmgDef, verbIsIncendiary))
                     {
                         AttackBlacklist.AddTarget(grenadierID, target_thing.thingIDNumber);
                         grenadier.stances.SetStance(new Stance_Mobile()); // Cancel warmup
@@ -152,7 +171,7 @@ namespace BetterGrenadeHandling
 
                         foreach (Pawn collateral in PawnsInBlastList)
                         {
-                            if (!grenadier.CanIgnoreCollateral(collateral, verb.GetDamageDef(), verb.IsIncendiary_Ranged()))
+                            if (!grenadier.CanIgnoreCollateral(collateral, verbDmgDef, verbIsIncendiary))
                             {
                                 AttackBlacklist.AddTarget(grenadierID, moved_pawnID);
                                 grenadier.stances.SetStance(new Stance_Mobile()); // Cancel warmup
