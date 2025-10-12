@@ -11,6 +11,27 @@ using static UnityEngine.GraphicsBuffer;
 
 namespace BetterGrenadeHandling
 {
+    // Just a global HashSet containing both warmup and standby grenadiers, for quick O(1) lookups
+    public static class GlobalGrenadierCache
+    {
+        private static readonly HashSet<Pawn> hGlobalGrenadierSet = new HashSet<Pawn>();
+
+        public static void Add(Pawn pawn)
+        {
+            hGlobalGrenadierSet.Add(pawn);
+        }
+
+        public static void Remove(Pawn pawn)
+        {
+            hGlobalGrenadierSet.Remove(pawn);
+        }
+
+        public static bool IsGrenadier(this Pawn pawn)
+        {
+            return hGlobalGrenadierSet.TryGetValue(pawn, out _);
+        }
+    }
+
     public static class WarmupGrenadiers
     {
         public static readonly List<Pawn> WarmupGrenadiersList = new List<Pawn>();
@@ -22,11 +43,13 @@ namespace BetterGrenadeHandling
                 return;
             }
             WarmupGrenadiersList.Add(pawn);
+            GlobalGrenadierCache.Add(pawn);
         }
 
         public static void Remove(Pawn pawn)
         {
             WarmupGrenadiersList.Remove(pawn);
+            GlobalGrenadierCache.Remove(pawn);
         }
 
         public static ReadOnlyCollection<Pawn> GetList()
@@ -57,11 +80,13 @@ namespace BetterGrenadeHandling
                 return;
             }
             StandByGrenadiersList.Add(pawn);
+            GlobalGrenadierCache.Add(pawn);
         }
 
         public static void Remove(Pawn pawn)
         {
             StandByGrenadiersList.Remove(pawn);
+            GlobalGrenadierCache.Remove(pawn);
         }
 
         public static ReadOnlyCollection<Pawn> GetList()
@@ -69,6 +94,14 @@ namespace BetterGrenadeHandling
             lock (StandByGrenadiersList)
             {
                 return StandByGrenadiersList.AsReadOnly();
+            }
+        }
+
+        public static List<Pawn> GetSnapshot()
+        {
+            lock (StandByGrenadiersList)
+            {
+                return new List<Pawn>(StandByGrenadiersList);
             }
         }
     }
@@ -150,7 +183,7 @@ namespace BetterGrenadeHandling
             Pawn pawn = __instance.pawn;
 
             // Not in combat anymore - remove
-            if (!__instance.anyCloseHostilesRecently)
+            if (!__instance.anyCloseHostilesRecently && GlobalGrenadierCache.IsGrenadier(pawn))
             {
                 StandByGrenadiers.Remove(pawn);
                 WarmupGrenadiers.Remove(pawn);
