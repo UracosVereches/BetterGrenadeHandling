@@ -77,7 +77,12 @@ namespace BetterGrenadeHandling
                     }
 
                     int waiting_grenadierID = waiting_grenadier.thingIDNumber;
-                    Verb verb = VerbCache.GetCurrentEffectiveVerb(waiting_grenadier);
+                    bool verbFound = VerbCache.TryGetCurrentEffectiveVerb(waiting_grenadier, out Verb verb);
+                    if (!verbFound)
+                    {
+                        continue;
+                    }
+
                     float verb_range = VerbCache.GetVerbRange(verb);
 
                     // If moved thing is outside of grenadier's weapon range - ignore
@@ -102,7 +107,13 @@ namespace BetterGrenadeHandling
                     }
 
                     int grenadierID = grenadier.thingIDNumber;
-                    Verb verb = VerbCache.GetCurrentEffectiveVerb(grenadier);
+
+                    bool verbFound = VerbCache.TryGetCurrentEffectiveVerb(grenadier, out Verb verb);
+                    if (!verbFound)
+                    {
+                        continue;
+                    }
+
                     LocalTargetInfo target = grenadier.TargetCurrentlyAimingAt;
 
                     if (target == null)

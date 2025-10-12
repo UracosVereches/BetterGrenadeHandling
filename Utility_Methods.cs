@@ -13,6 +13,14 @@ namespace BetterGrenadeHandling
     public static class BGHUtils
     {
         /*
+        private static class IgnoreCollateralCache
+        {
+            private static readonly Dictionary<Pawn, dIgnoreCollateralCache
+
+        }
+        */
+
+        /*
          * Ripped out directly from RimWorld.StunHandler.CanBeStunnedByDamage(DamageDef def) 
          * TODO: cache. update it every 30 calls or so.
          * This method is very likely to change in future updates */

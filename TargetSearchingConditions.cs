@@ -17,8 +17,13 @@ namespace BetterGrenadeHandling
         public static void Prefix(IAttackTargetSearcher searcher, TargetScanFlags flags, ref Predicate<Thing> validator
         )
         {
-            Pawn searcherPawn = searcher as Pawn;
-            Verb verb = VerbCache.GetCurrentEffectiveVerb(searcher as Pawn);
+            Thing searcherThing = searcher as Thing;
+
+            bool verbFound = VerbCache.TryGetCurrentEffectiveVerb(searcherThing, out Verb verb);
+            if (!verbFound)
+            {
+                return;
+            }
 
             Predicate<Thing> origValidator = (Thing thing) => true; // return true by default
             // Save original validator if there's any

@@ -30,6 +30,13 @@ namespace BetterGrenadeHandling
         {
             return hGlobalGrenadierSet.TryGetValue(pawn, out _);
         }
+
+        public static void GlobalRemove(Pawn pawn)
+        {
+            hGlobalGrenadierSet.Remove(pawn);
+            WarmupGrenadiers.Remove(pawn);
+            StandByGrenadiers.Remove(pawn);
+        }
     }
 
     public static class WarmupGrenadiers
@@ -119,15 +126,18 @@ namespace BetterGrenadeHandling
                 // Ffs, there is a strange edge case right after when cooldown wears off - newStance != curStance
                 Stance stance = pawn.stances.curStance;
 
-                Verb verb = VerbCache.GetCurrentEffectiveVerb(pawn);
+                bool verbFound = VerbCache.TryGetCurrentEffectiveVerb(pawn, out Verb verb);
+                if (!verbFound)
+                {
+                    GlobalGrenadierCache.GlobalRemove(pawn);
+                    return;
+                }
                 float blastradius = VerbCache.GetVerbBlastRadius(verb);
 
                 if (blastradius == 0f)
                 {
                     // Weapon has no blast radius, clean up lists
-                    GlobalGrenadierCache.Remove(pawn);
-                    StandByGrenadiers.Remove(pawn);
-                    WarmupGrenadiers.Remove(pawn);
+                    GlobalGrenadierCache.GlobalRemove(pawn);
                     return;
                 }
 
@@ -147,9 +157,7 @@ namespace BetterGrenadeHandling
                 else
                 {
                     // Neither Stance_Warmup or Stance_Mobile
-                    GlobalGrenadierCache.Remove(pawn);
-                    StandByGrenadiers.Remove(pawn);
-                    WarmupGrenadiers.Remove(pawn);
+                    GlobalGrenadierCache.GlobalRemove(pawn);
                 }
             }
             catch (Exception ex)
@@ -178,7 +186,6 @@ namespace BetterGrenadeHandling
     [HarmonyPatch(typeof(Pawn_MindState), "MindStateTickInterval")]
     public static class MindStateTickInterval_Patch
     {
-        // Postfix method that runs after the original method
         public static void Postfix(Pawn_MindState __instance, int delta)
         {
             Pawn pawn = __instance.pawn;

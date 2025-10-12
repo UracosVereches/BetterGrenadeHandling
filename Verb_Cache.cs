@@ -5,6 +5,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using Verse;
+using Verse.AI;
 
 namespace BetterGrenadeHandling
 {
@@ -12,16 +13,16 @@ namespace BetterGrenadeHandling
     // Something the base game should definitely take advantage of
     public static class VerbCache
     {
-        private static readonly ConcurrentDictionary<Pawn, Verb> dPawn_Verb = new ConcurrentDictionary<Pawn, Verb>();
+        private static readonly ConcurrentDictionary<Thing, Verb> dThing_Verb = new ConcurrentDictionary<Thing, Verb>();
         private static readonly ConcurrentDictionary<Verb, float> dVerb_fBlastRadius = new ConcurrentDictionary<Verb, float>();
         private static readonly ConcurrentDictionary<Verb, float> dVerb_fRange = new ConcurrentDictionary<Verb, float>();
         private static readonly ConcurrentDictionary<Verb, bool> dVerb_bEMP = new ConcurrentDictionary<Verb, bool>();
 
         // For cleanup
         // Always remember to put new dictionaries in here
-        private static void RemovePawnFromCache(Pawn pawn)
+        public static void RemoveThingFromCache(Thing thing)
         {
-            bool foundVerb = dPawn_Verb.TryRemove(pawn, out Verb verb);
+            bool foundVerb = dThing_Verb.TryRemove(thing, out Verb verb);
 
             if (!foundVerb)
             {
@@ -33,19 +34,24 @@ namespace BetterGrenadeHandling
             dVerb_bEMP.TryRemove(verb, out _);
         }
 
-        public static Verb GetCurrentEffectiveVerb(Pawn pawn)
+        public static bool TryGetCurrentEffectiveVerb(Thing thing, out Verb verb)
         {
-            bool found_verb = dPawn_Verb.TryGetValue(pawn, out Verb verb);
+            bool verbFound = dThing_Verb.TryGetValue(thing, out verb);
 
-            if (!found_verb || verb == null)
+            if (!verbFound || verb == null)
             {
                 // Verb not found or null in dictionary, create new entry
-                verb = pawn.CurrentEffectiveVerb;
-                dPawn_Verb[pawn] = verb;
-                return verb;
+                verb = (thing as IAttackTargetSearcher)?.CurrentEffectiveVerb; // IAttackTargetSearcher - turret support
+                if (verb == null)
+                {
+                    return false;
+                }
+
+                dThing_Verb[thing] = verb;
+                return verbFound;
             }
 
-            return verb;
+            return verbFound;
         }
 
         // Directly ripped out from Verse.VerbUtility.UsesExplosiveProjectiles(this Verb verb)
@@ -106,12 +112,7 @@ namespace BetterGrenadeHandling
         // Remove stale entries when new weapon is equipped
         public static void Notify_VerbChanged(Pawn pawn)
         {
-            RemovePawnFromCache(pawn);
-        }
-
-        public static void CleanUpPawn(Pawn pawn)
-        {
-            RemovePawnFromCache(pawn);
+            RemoveThingFromCache(pawn);
         }
     }
 
@@ -144,7 +145,7 @@ namespace BetterGrenadeHandling
                 return;
             }
 
-            VerbCache.CleanUpPawn(__instance);
+            VerbCache.RemoveThingFromCache(__instance);
         }
     }
 
@@ -154,7 +155,7 @@ namespace BetterGrenadeHandling
     {
         static void Postfix(Pawn pawn, PawnDiscardDecideMode discardMode = PawnDiscardDecideMode.Decide)
         {
-            VerbCache.CleanUpPawn(pawn);
+            VerbCache.RemoveThingFromCache(pawn);
         }
     }
 
@@ -164,9 +165,9 @@ namespace BetterGrenadeHandling
     {
         static void Prefix(Thing __instance)
         {
-            if (!(__instance is Pawn pawn)) return;
+            //if (!(__instance is Pawn pawn)) return;
 
-            VerbCache.CleanUpPawn(pawn);
+            VerbCache.RemoveThingFromCache(__instance);
         }
     } 
 }
