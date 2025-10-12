@@ -43,13 +43,11 @@ namespace BetterGrenadeHandling
                 return;
             }
             WarmupGrenadiersList.Add(pawn);
-            GlobalGrenadierCache.Add(pawn);
         }
 
         public static void Remove(Pawn pawn)
         {
             WarmupGrenadiersList.Remove(pawn);
-            GlobalGrenadierCache.Remove(pawn);
         }
 
         public static ReadOnlyCollection<Pawn> GetList()
@@ -80,13 +78,11 @@ namespace BetterGrenadeHandling
                 return;
             }
             StandByGrenadiersList.Add(pawn);
-            GlobalGrenadierCache.Add(pawn);
         }
 
         public static void Remove(Pawn pawn)
         {
             StandByGrenadiersList.Remove(pawn);
-            GlobalGrenadierCache.Remove(pawn);
         }
 
         public static ReadOnlyCollection<Pawn> GetList()
@@ -129,6 +125,7 @@ namespace BetterGrenadeHandling
                 if (blastradius == 0f)
                 {
                     // Weapon has no blast radius, clean up lists
+                    GlobalGrenadierCache.Remove(pawn);
                     StandByGrenadiers.Remove(pawn);
                     WarmupGrenadiers.Remove(pawn);
                     return;
@@ -136,18 +133,21 @@ namespace BetterGrenadeHandling
 
                 if (stance is Stance_Warmup)
                 {
+                    GlobalGrenadierCache.Add(pawn);
                     WarmupGrenadiers.Add(pawn);
                     StandByGrenadiers.Remove(pawn);
 
                 }
                 else if (stance is Stance_Mobile)
                 {
+                    GlobalGrenadierCache.Add(pawn);
                     StandByGrenadiers.Add(pawn);
                     WarmupGrenadiers.Remove(pawn);
                 }
                 else
                 {
                     // Neither Stance_Warmup or Stance_Mobile
+                    GlobalGrenadierCache.Remove(pawn);
                     StandByGrenadiers.Remove(pawn);
                     WarmupGrenadiers.Remove(pawn);
                 }
@@ -168,6 +168,7 @@ namespace BetterGrenadeHandling
         {
             if (!(__instance is Pawn pawn)) return;
 
+            GlobalGrenadierCache.Remove(pawn);
             StandByGrenadiers.Remove(pawn);
             WarmupGrenadiers.Remove(pawn);
         }
@@ -185,6 +186,7 @@ namespace BetterGrenadeHandling
             // Not in combat anymore - remove
             if (!__instance.anyCloseHostilesRecently && GlobalGrenadierCache.IsGrenadier(pawn))
             {
+                GlobalGrenadierCache.Remove(pawn);
                 StandByGrenadiers.Remove(pawn);
                 WarmupGrenadiers.Remove(pawn);
             }
