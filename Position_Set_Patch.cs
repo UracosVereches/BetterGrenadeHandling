@@ -78,16 +78,17 @@ namespace BetterGrenadeHandling
 
                     int waiting_grenadierID = waiting_grenadier.thingIDNumber;
                     bool verbFound = VerbCache.TryGetCurrentEffectiveVerb(waiting_grenadier, out Verb verb);
-                    if (!verbFound)
+                    if (!verbFound || verb == null)
                     {
                         continue;
                     }
 
                     float verb_range = VerbCache.GetVerbRange(verb);
 
-                    // If moved thing is outside of grenadier's weapon range - ignore
+                    // If moved thing is outside of grenadier's weapon range - ignore and try remove from blacklist
                     if (moved_pawn_pos.DistanceToSquared(waiting_grenadier.Position) >= (verb_range * verb_range))
                     {
+                        AttackBlacklist.RemoveTarget(waiting_grenadierID, moved_pawnID);
                         continue;
                     }
 
@@ -109,7 +110,7 @@ namespace BetterGrenadeHandling
                     int grenadierID = grenadier.thingIDNumber;
 
                     bool verbFound = VerbCache.TryGetCurrentEffectiveVerb(grenadier, out Verb verb);
-                    if (!verbFound)
+                    if (!verbFound || verb == null)
                     {
                         continue;
                     }
