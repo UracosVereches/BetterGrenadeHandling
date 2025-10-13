@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Security.Cryptography;
+using System.Threading;
 using HarmonyLib;
 using RimWorld;
 using Verse;
@@ -11,34 +12,6 @@ using static UnityEngine.GraphicsBuffer;
 
 namespace BetterGrenadeHandling
 {
-    // Just a global HashSet containing both warmup and standby grenadiers, for quick O(1) lookups
-    public static class GlobalGrenadierCache
-    {
-        private static readonly HashSet<Pawn> hGlobalGrenadierSet = new HashSet<Pawn>();
-
-        public static void Add(Pawn pawn)
-        {
-            hGlobalGrenadierSet.Add(pawn);
-        }
-
-        public static void Remove(Pawn pawn)
-        {
-            hGlobalGrenadierSet.Remove(pawn);
-        }
-
-        public static bool IsGrenadier(this Pawn pawn)
-        {
-            return hGlobalGrenadierSet.TryGetValue(pawn, out _);
-        }
-
-        public static void GlobalRemove(Pawn pawn)
-        {
-            hGlobalGrenadierSet.Remove(pawn);
-            WarmupGrenadiers.Remove(pawn);
-            StandByGrenadiers.Remove(pawn);
-        }
-    }
-
     public static class WarmupGrenadiers
     {
         public static readonly List<Pawn> WarmupGrenadiersList = new List<Pawn>();
@@ -127,9 +100,11 @@ namespace BetterGrenadeHandling
                 Stance stance = pawn.stances.curStance;
 
                 bool verbFound = VerbCache.TryGetCurrentEffectiveVerb(pawn, out Verb verb);
-                if (!verbFound)
+                if (!verbFound || verb == null)
                 {
-                    GlobalGrenadierCache.GlobalRemove(pawn);
+                    // No weapon found, clean up
+                    WarmupGrenadiers.Remove(pawn);
+                    StandByGrenadiers.Remove(pawn);
                     return;
                 }
                 float blastradius = VerbCache.GetVerbBlastRadius(verb);
@@ -137,27 +112,30 @@ namespace BetterGrenadeHandling
                 if (blastradius == 0f)
                 {
                     // Weapon has no blast radius, clean up lists
-                    GlobalGrenadierCache.GlobalRemove(pawn);
+                    WarmupGrenadiers.Remove(pawn);
+                    StandByGrenadiers.Remove(pawn);
                     return;
                 }
 
                 if (stance is Stance_Warmup)
                 {
-                    GlobalGrenadierCache.Add(pawn);
                     WarmupGrenadiers.Add(pawn);
                     StandByGrenadiers.Remove(pawn);
 
                 }
                 else if (stance is Stance_Mobile)
                 {
-                    GlobalGrenadierCache.Add(pawn);
-                    StandByGrenadiers.Add(pawn);
+                    if (pawn.CurJobDef == JobDefOf.Wait_Combat)
+                    {
+                        StandByGrenadiers.Add(pawn);
+                    }
                     WarmupGrenadiers.Remove(pawn);
                 }
                 else
                 {
                     // Neither Stance_Warmup or Stance_Mobile
-                    GlobalGrenadierCache.GlobalRemove(pawn);
+                    WarmupGrenadiers.Remove(pawn);
+                    StandByGrenadiers.Remove(pawn);
                 }
             }
             catch (Exception ex)
@@ -167,35 +145,43 @@ namespace BetterGrenadeHandling
         }
     }
 
-    // Remove from lists when pawn is destroyed
-    [HarmonyPatch(typeof(Thing))]
-    [HarmonyPatch("Destroy")]
-    static class GrenadierTracker_Patch_Thing_Destroy_Prefix
+    // Manage combat state
+    [HarmonyPatch(typeof(Job), "MakeDriver")]
+    public static class Job_MakeDriver_Postfix
     {
-        static void Prefix(Thing __instance)
+        public static void Postfix(Pawn driverPawn, ref JobDriver __result)
         {
-            if (!(__instance is Pawn pawn)) return;
-
-            GlobalGrenadierCache.Remove(pawn);
-            StandByGrenadiers.Remove(pawn);
-            WarmupGrenadiers.Remove(pawn);
-        }
-    }
-
-    // Remove from lists when pawn is not in combat anymore
-    [HarmonyPatch(typeof(Pawn_MindState), "MindStateTickInterval")]
-    public static class MindStateTickInterval_Patch
-    {
-        public static void Postfix(Pawn_MindState __instance, int delta)
-        {
-            Pawn pawn = __instance.pawn;
-
-            // Not in combat anymore - remove
-            if (!__instance.anyCloseHostilesRecently && GlobalGrenadierCache.IsGrenadier(pawn))
+            bool verbFound = VerbCache.TryGetCurrentEffectiveVerb(driverPawn, out Verb verb);
+            if (!verbFound || verb == null)
             {
-                GlobalGrenadierCache.Remove(pawn);
-                StandByGrenadiers.Remove(pawn);
-                WarmupGrenadiers.Remove(pawn);
+                // No weapon found, clean up
+                WarmupGrenadiers.Remove(driverPawn);
+                StandByGrenadiers.Remove(driverPawn);
+                return;
+            }
+            float blastradius = VerbCache.GetVerbBlastRadius(verb);
+
+            if (blastradius == 0f)
+            {
+                // Weapon has no blast radius, clean up lists
+                WarmupGrenadiers.Remove(driverPawn);
+                StandByGrenadiers.Remove(driverPawn);
+                return;
+            }
+
+            if (__result.job.def == JobDefOf.Wait_Combat)
+            {
+                if (driverPawn.TargetCurrentlyAimingAt != null)
+                {
+                    // Should be handled by SetStance (warmup grenadier)
+                    StandByGrenadiers.Remove(driverPawn);
+                    return;
+                }
+                StandByGrenadiers.Add(driverPawn);
+            }
+            else
+            {
+                StandByGrenadiers.Remove(driverPawn);
             }
         }
     }
