@@ -53,7 +53,10 @@ namespace BetterGrenadeHandling
                 return;
             }
 
-            __result = target.ShouldBeHitByEMP(__instance);
+            if (__result)
+            {
+                __result = target.ShouldBeHitByEMP(__instance); // If result is true (can hit target) - check for EMP
+            }
         }
     }
 }
