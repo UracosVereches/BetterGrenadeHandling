@@ -25,3 +25,6 @@ For non-steam users:
 1. Download the latest release
 2. Unpack into RimWorld/Mods folder
 3. This mod also requires Harmony library, please install https://github.com/pardeike/HarmonyRimWorld
+
+## For modders
+Building in Debug mode enables helpful on-screen UI that visualizes code in real time
