@@ -19,7 +19,7 @@ Toxic raiders launch toxic projectiles no matter what.
 
 ## 📥 Installation
 
-You can download it on Steam via *insert steam link here*
+You can download it on Steam via https://steamcommunity.com/sharedfiles/filedetails/?id=3592500869
 
 For non-steam users:
 1. Download the latest release
