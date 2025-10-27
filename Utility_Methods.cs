@@ -24,6 +24,8 @@ namespace BetterGrenadeHandling
          * Ripped out directly from RimWorld.StunHandler.CanBeStunnedByDamage(DamageDef def) 
          * TODO: cache. update it every 30 calls or so.
          * This method is very likely to change in future updates */
+        // Precache
+        private static DamageDef defEMP = DamageDefOf.EMP;
         private static bool CanBeStunnedByDamage(this Pawn pawn, DamageDef def)
         {
             if (!def.causeStun)
@@ -47,9 +49,26 @@ namespace BetterGrenadeHandling
             {
                 return true;
             }
-            if (def == DamageDefOf.EMP && !pawn.RaceProps.IsFlesh)
+            if (def == defEMP)
             {
-                return true;
+                if (!pawn.RaceProps.IsFlesh)
+                    return true;
+
+                // Check if pawn has a shield belt and if it has any energy left
+                if (pawn.HasWorkingShieldBelt())
+                {
+                    return true;
+                }
+
+                // Check if pawn has any stunnable hediffs (e.g. brain implants)
+                foreach (Hediff hediff in pawn.health.hediffSet.hediffs)
+                {
+                    bool foundComp = hediff.TryGetComp<HediffComp_ReactOnDamage>(out HediffComp_ReactOnDamage comp);
+                    if (foundComp && comp.Props.damageDefIncoming == defEMP)
+                    {
+                        return true;
+                    }
+                }
             }
             if (ModsConfig.BiotechActive && def == DamageDefOf.MechBandShockwave && pawn.RaceProps.IsMechanoid)
             {
@@ -96,15 +115,24 @@ namespace BetterGrenadeHandling
 
         /// <summary>
         /// Check if attacker can safely ignore collateral in target's blast radius
-        /// </summary>
+        /// </summary>\
+        // Precache
+        private static StatDef flammabiltiyDef = StatDefOf.Flammability;
+        private static StatDef armorRatingHeat = StatDefOf.ArmorRating_Heat;
+        private static DamageDef toxGasDef = DamageDefOf.ToxGas;
+        private static StatDef toxEnvResistance = StatDefOf.ToxicEnvironmentResistance;
+        private static FactionDef wastersDef = FactionDefOf.PirateWaster;
         public static bool CanIgnoreCollateral(this Pawn attacker, Pawn collateral, DamageDef damageDef, bool isIncendiary = false)
         {
+            if (BGHConfig.AvoidFriendlyFire == false)
+            {
+                return true;
+            }
+
             if (attacker == null || collateral == null || damageDef == null)
             {
                 return false;
             }
-
-            //DamageDef def = verb.GetDamageDef();
 
             if (attacker.HostileTo(collateral))
             {
@@ -116,9 +144,25 @@ namespace BetterGrenadeHandling
             // Flammability - how likely you are to catch on fire
             // Heat armor - how resistant you are to burn when you catch on fire
             // You could wear a full devilstrand set, but you'd catch fire just as often as without it
-            if (isIncendiary && (collateral.GetStatValue(StatDefOf.Flammability) < 0.1f || collateral.GetOverallArmorRating(StatDefOf.ArmorRating_Heat) > 0.9f))
+            if (isIncendiary && (collateral.GetStatValue(flammabiltiyDef) <= BGHConfig.MinFlammabilityToIgnore || collateral.GetOverallArmorRating(armorRatingHeat) >= BGHConfig.MinHeatArmorToIgnore))
             {
                 return true;
+            }
+
+            if (damageDef == toxGasDef)
+            {
+                // I find it reasonable for waster pirates to use toxic weapons no matter what, because that's their entire ideology
+                // I kind of want to gatekeep that, so there is no config option
+                if (attacker.Faction.def == wastersDef)
+                {
+                    return true;
+                }
+
+                if (collateral.GetStatValue(toxEnvResistance) >= BGHConfig.MinToxicResistanceToIgnore)
+                {
+                    return true;
+                }
+                    
             }
 
             // Ignore if weapon causes stun damage and friendly collateral can't be stunned
@@ -210,14 +254,41 @@ namespace BetterGrenadeHandling
         }
 
         /// <summary>
-        /// Check if this target is EMP stunned already. Return false if verb is EMP and target is EMP stunned. Always returns true if verb is not EMP
+        /// Check if this target is not made of flesh and isn't EMP stunned already. If made of flesh - check if target has working shield-belt
         /// </summary>
         public static bool ShouldBeHitByEMP(this Thing target, Verb verb)
         {
             Pawn targetPawn = target as Pawn;
 
-            // Always return true if verb is not EMP
-            return VerbCache.IsVerbEMP(verb) ? targetPawn?.stances?.stunner?.StunFromEMP == false : true;
+            return targetPawn?.RaceProps?.IsFlesh == false ? targetPawn?.stances?.stunner?.StunFromEMP == false : targetPawn.HasWorkingShieldBelt();
+        }
+
+        /// <summary>
+        /// Check if this pawn has a shield belt with energy
+        /// </summary>
+        public static bool HasWorkingShieldBelt(this Pawn pawn)
+        {
+            if (pawn.apparel != null)
+            {
+                for (int i = 0; i < pawn.apparel.WornApparelCount; i++)
+                {
+                    List<ThingComp> allComps = pawn.apparel.WornApparel[i].AllComps;
+                    for (int j = 0; j < allComps.Count; j++)
+                    {
+                        if (allComps[j] is CompShield compShield)
+                        {
+                            if (compShield.Energy == 0)
+                            {
+                                return false;
+                            }
+
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            return false;
         }
     }
 }

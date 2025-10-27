@@ -13,6 +13,7 @@ using static Verse.PathRequest;
 using Unity.Collections;
 using Verse.Noise;
 using static UnityEngine.GraphicsBuffer;
+using System.Diagnostics;
 
 namespace BetterGrenadeHandling
 {
@@ -67,6 +68,16 @@ namespace BetterGrenadeHandling
 
                 Projectile projectile = kvp.Key;
                 DamageDef damageDef = projectile.DamageDef;
+
+                // Avoid shells by config
+                bool isShell = projectile.def.ToString().Contains("Shell"); // Dumbass check, but there isn't any better, mod compatible way that I know of
+                if (isShell && BGHConfig.AvoidShells == false)
+                    return false;
+
+                // Avoid other explosives by config
+                if (!isShell && BGHConfig.AvoidExplosives == false)
+                    return false;
+
                 HashSet<IntVec3> positions = kvp.Value;
 
                 Pawn launcher = projectile.Launcher as Pawn;
@@ -94,6 +105,16 @@ namespace BetterGrenadeHandling
             {
                 Projectile projectile = kvp.Key;
                 DamageDef damageDef = projectile.DamageDef;
+
+                // Avoid shells by config
+                bool isShell = projectile.def.ToString().Contains("Shell"); // Dumbass check, but there isn't any better, mod compatible way that I know of
+                if (isShell && BGHConfig.AvoidShells == false)
+                    return obtained_positions.ToList();
+
+                // Avoid other explosives by config
+                if (!isShell && BGHConfig.AvoidExplosives == false)
+                    return obtained_positions.ToList();
+
                 HashSet<IntVec3> positions = kvp.Value;
 
                 Pawn launcher = projectile.Launcher as Pawn;
@@ -408,6 +429,15 @@ namespace BetterGrenadeHandling
                     {
                         continue;
                     }
+
+                    // Flee shells by config
+                    bool isShell = projectile.def.ToString().Contains("Shell"); // Dumbass check, but there isn't any better, mod compatible way that I know of
+                    if (isShell && BGHConfig.FleeShells == false)
+                        break;
+
+                    // Flee other explosives by config
+                    if (!isShell && BGHConfig.FleeExplosives == false)
+                        break;
 
                     pawn.ForceFleeFromExplosion(usedCell, BGHUtils.ExpandBlastRadius(blastradius));
                 }
