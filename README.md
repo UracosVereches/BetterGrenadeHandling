@@ -19,9 +19,12 @@ Toxic raiders launch toxic projectiles no matter what.
 
 ## 📥 Installation
 
-You can download it on Steam via *insert steam link here*
+You can download it on Steam via https://steamcommunity.com/sharedfiles/filedetails/?id=3592500869
 
 For non-steam users:
 1. Download the latest release
 2. Unpack into RimWorld/Mods folder
 3. This mod also requires Harmony library, please install https://github.com/pardeike/HarmonyRimWorld
+
+## For modders
+Building in Debug mode enables helpful on-screen UI that visualizes code in real time
