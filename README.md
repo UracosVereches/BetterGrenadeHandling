@@ -15,7 +15,7 @@ Toxic raiders launch toxic projectiles no matter what.
 - Pawns equpped with EMP won't target already EMP-stunned mechs - eliminates the dumb behavior when they target the same mech over and over again. Also they automatically target enemies wearing shield-belts - a capability the vanilla game clearly lacks.
 - Pawns try to cause as much damage with explosives as possible by choosing much more tightly packed groups of enemies through the in-game target score system. Increases the DPS.
 - All of the above applies to enemy raiders too. Now they will value their own lives more and won't shoot rockets at you if it involves any friendly fire.
-- You can customize some parts of the mod to your liking.
+- You can customize some parts of the mod to your liking. Supported languages: English and Russian.
 - Meticulously overengineered
 
 ## 📥 Installation
