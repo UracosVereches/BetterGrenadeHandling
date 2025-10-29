@@ -139,6 +139,12 @@ namespace BetterGrenadeHandling
                 return true;
             }
 
+            // Ignore wildlife except for hostile animals(manhunters, ytakkin ability)
+            if (collateral.IsAnimal && (collateral.Faction == null || collateral.InMentalState))
+            {
+                return true;
+            }
+
             // Ignore friendly collateral if its flammability less than 10% or heat armor exceeds required threshold (>90%)
             // Although flammability and heat armor sound similar - they're not the same
             // Flammability - how likely you are to catch on fire
@@ -268,7 +274,7 @@ namespace BetterGrenadeHandling
         /// </summary>
         public static bool HasWorkingShieldBelt(this Pawn pawn)
         {
-            if (pawn.apparel != null)
+            if (pawn?.apparel != null)
             {
                 for (int i = 0; i < pawn.apparel.WornApparelCount; i++)
                 {
