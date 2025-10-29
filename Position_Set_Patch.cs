@@ -40,27 +40,29 @@ namespace BetterGrenadeHandling
                 if (__instance is null)
                     return;
 
-                if (!(__instance is Pawn))
+                if (!(__instance is Pawn moved_pawn))
                     return;
 
-                if (__instance.Map is null)
+                if (moved_pawn.Map is null)
                     return;
 
-                if (__instance.Map.mapPawns is null)
+                if (moved_pawn.Map.mapPawns is null)
                     return;
 
-                if (__instance.Map.mapPawns.AllPawnsSpawned is null)
+                if (moved_pawn.Map.mapPawns.AllPawnsSpawned is null)
                     return;
 
-                // Ignore wildlife
-                if ((__instance as Pawn).IsAnimal && __instance.Faction == null)
+                // Ignore wildlife except for hostile animals(manhunters, ytakkin ability)
+                if (moved_pawn.IsAnimal && (moved_pawn.Faction == null || moved_pawn.InMentalState))
+                {
                     return;
+                }
 
                 #if DEBUG
                 Debug_ThingID_PositionCache.SavePos(__instance.thingIDNumber, value);
                 #endif
 
-                Pawn moved_pawn = __instance as Pawn;
+                //Pawn moved_pawn = __instance as Pawn;
                 int moved_pawnID = moved_pawn.thingIDNumber;
                 IntVec3 moved_pawn_pos = value;
 
