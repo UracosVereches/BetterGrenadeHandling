@@ -38,7 +38,12 @@ namespace BetterGrenadeHandling
 
         public static void RemoveProjectile(Projectile projectile)
         {
-            dict.TryRemove(projectile, out HashSet<IntVec3> positionsToBeRemoved);
+            bool isFound = dict.TryRemove(projectile, out HashSet<IntVec3> positionsToBeRemoved);
+
+            if (!isFound)
+            {
+                return;
+            }
 
             Pathing pathing = projectile.Map?.pathing;
             foreach (IntVec3 pos in positionsToBeRemoved)
@@ -398,52 +403,129 @@ namespace BetterGrenadeHandling
         static void Postfix(Projectile __instance, Thing launcher, Vector3 origin, LocalTargetInfo usedTarget, LocalTargetInfo intendedTarget, ProjectileHitFlags hitFlags,
             bool preventFriendlyFire = false, Thing equipment = null, ThingDef targetCoverDef = null)
         {
-            if (!(__instance is Projectile_Explosive projectile))
+            try
             {
-                return;
-            }
-
-            float blastradius = projectile.def?.projectile?.explosionRadius ?? 0f;
-            IntVec3 usedCell = usedTarget.Cell;
-
-            Map map = launcher.Map;
-
-            // Create a HashSet of dangerous positions with usedCell included initially
-            HashSet<IntVec3> dangerousPositions = new HashSet<IntVec3>{usedCell}; // usedCell - add center
-            foreach (IntVec3 pos in GenRadial.RadialCellsAround(usedCell, blastradius, true))
-            {
-                dangerousPositions.Add(pos);
-            }
-
-            // Force flee pawns from dangerous positions
-            foreach (IntVec3 pos in dangerousPositions)
-            {
-                foreach (Thing thing in pos.GetThingList(map))
+                if (!(__instance is Projectile_Explosive projectile))
                 {
-                    if (!(thing is Pawn pawn))
-                    {
-                        continue;
-                    }
-
-                    if (launcher is Pawn launcherPawn && launcherPawn.CanIgnoreCollateral(pawn, projectile.DamageDef, projectile.def.projectile.ai_IsIncendiary))
-                    {
-                        continue;
-                    }
-
-                    // Flee shells by config
-                    bool isShell = projectile.def.ToString().Contains("Shell"); // Dumbass check, but there isn't any better, mod compatible way that I know of
-                    if (isShell && BGHConfig.FleeShells == false)
-                        break;
-
-                    // Flee other explosives by config
-                    if (!isShell && BGHConfig.FleeExplosives == false)
-                        break;
-
-                    pawn.ForceFleeFromExplosion(usedCell, BGHUtils.ExpandBlastRadius(blastradius));
+                    return;
                 }
-            }
 
-            DangerPositionTracker.AddProjectile(projectile, dangerousPositions);
+                float blastradius = projectile.def?.projectile?.explosionRadius ?? 0f;
+                IntVec3 usedCell = usedTarget.Cell;
+
+                Map map = launcher.Map;
+
+                // Create a HashSet of dangerous positions with usedCell included initially
+                HashSet<IntVec3> dangerousPositions = new HashSet<IntVec3> { usedCell }; // usedCell - add center
+                foreach (IntVec3 pos in GenRadial.RadialCellsAround(usedCell, blastradius, true))
+                {
+                    dangerousPositions.Add(pos);
+                }
+
+                // Force flee pawns from dangerous positions
+                foreach (IntVec3 pos in dangerousPositions)
+                {
+                    foreach (Thing thing in pos.GetThingList(map))
+                    {
+                        if (!(thing is Pawn pawn))
+                        {
+                            continue;
+                        }
+
+                        if (launcher is Pawn launcherPawn && launcherPawn.CanIgnoreCollateral(pawn, projectile.DamageDef, projectile.def.projectile.ai_IsIncendiary))
+                        {
+                            continue;
+                        }
+
+                        // Flee shells by config
+                        bool isShell = projectile.def.ToString().Contains("Shell"); // Dumbass check, but there isn't any better, mod compatible way that I know of
+                        if (isShell && BGHConfig.FleeShells == false)
+                            break;
+
+                        // Flee other explosives by config
+                        if (!isShell && BGHConfig.FleeExplosives == false)
+                            break;
+
+                        pawn.ForceFleeFromExplosion(usedCell, BGHUtils.ExpandBlastRadius(blastradius));
+                    }
+                }
+
+                DangerPositionTracker.AddProjectile(projectile, dangerousPositions);
+            }
+            catch (Exception e)
+            {
+                Log.Error($"[Better Grenade Handling] Exception in Projectile Launch: {e}");
+            }
+        }
+    }
+
+    // This patch is needed when explosive gets intercepted by something inbetween
+    // Same procedure as for launch, we just remove old dangerous positions created by Launch method
+    [HarmonyPatch(typeof(Projectile_Explosive))]
+    [HarmonyPatch("Impact")]
+    [HarmonyPatch(new Type[] {
+    typeof(Thing), typeof(bool)
+    })]
+    public static class Patch_Projectile_Impact_Prefix
+    {
+        static void Prefix(Projectile __instance, Thing hitThing, bool blockedByShield)
+        {
+            try
+            {
+                if (!(__instance is Projectile_Explosive projectile))
+                {
+                    return;
+                }
+
+                // Remove old projectile data first
+                DangerPositionTracker.RemoveProjectile(projectile);
+
+                float blastradius = projectile.def?.projectile?.explosionRadius ?? 0f;
+                IntVec3 projectilePos = __instance.Position;
+
+                Map map = projectile.Map;
+
+                // Create a HashSet of dangerous positions with usedCell included initially
+                HashSet<IntVec3> dangerousPositions = new HashSet<IntVec3> { projectilePos }; // usedCell - add center
+                foreach (IntVec3 pos in GenRadial.RadialCellsAround(projectilePos, blastradius, true))
+                {
+                    dangerousPositions.Add(pos);
+                }
+
+                // Force flee pawns from dangerous positions
+                foreach (IntVec3 pos in dangerousPositions)
+                {
+                    foreach (Thing thing in pos.GetThingList(map))
+                    {
+                        if (!(thing is Pawn pawn))
+                        {
+                            continue;
+                        }
+
+                        if (projectile.Launcher is Pawn launcherPawn && launcherPawn.CanIgnoreCollateral(pawn, projectile.DamageDef, projectile.def.projectile.ai_IsIncendiary))
+                        {
+                            continue;
+                        }
+
+                        // Flee shells by config
+                        bool isShell = projectile.def.ToString().Contains("Shell"); // Dumbass check, but there isn't any better, mod compatible way that I know of
+                        if (isShell && BGHConfig.FleeShells == false)
+                            break;
+
+                        // Flee other explosives by config
+                        if (!isShell && BGHConfig.FleeExplosives == false)
+                            break;
+
+                        pawn.ForceFleeFromExplosion(projectilePos, BGHUtils.ExpandBlastRadius(blastradius));
+                    }
+                }
+
+                DangerPositionTracker.AddProjectile(projectile, dangerousPositions);
+            }
+            catch (Exception e)
+            {
+                Log.Error($"[Better Grenade Handling] Exception in Projectile Launch: {e}");
+            }
         }
     }
 
@@ -454,9 +536,16 @@ namespace BetterGrenadeHandling
     {
         static void Prefix(Thing __instance)
         {
-            if (!(__instance is Projectile_Explosive explosive)) return;
+            try
+            {
+                if (!(__instance is Projectile_Explosive explosive)) return;
 
-            DangerPositionTracker.RemoveProjectile(explosive);
+                DangerPositionTracker.RemoveProjectile(explosive);
+            }
+            catch(Exception e)
+            {
+                Log.Error($"[Better Grenade Handling] Exception in Thing Destroy: {e}");
+            }
         }
     }
 }
