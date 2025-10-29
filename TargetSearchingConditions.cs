@@ -85,30 +85,26 @@ namespace BetterGrenadeHandling
     [HarmonyPatch(nameof(AttackTargetFinder.BestAttackTarget))]
     public static class AttackTargetFinder_BestAttackTarget_Patch
     {
-        public static bool JustReturnFalse(Verb verb)
+        private static bool JustReturnFalse(Verb verb)
         {
             return false;
         }
 
+        private static MethodInfo targetIsEMP = AccessTools.Method(typeof(VerbUtility), "IsEMP", new Type[] { typeof(Verb) });
+        private static MethodInfo replacement = AccessTools.Method(typeof(AttackTargetFinder_BestAttackTarget_Patch), nameof(JustReturnFalse), new Type[] { typeof(Verb) });
+
+        private static bool methodsFound = targetIsEMP != null && replacement != null;
+
         static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions /*, ILGenerator generator*/)
         {
+            if (!methodsFound)
+                return instructions;
+
             try
             {
+
                 if (!BGHConfig.EMPFix)
                 {
-                    return instructions;
-                }
-                MethodInfo targetIsEMP = AccessTools.Method(typeof(VerbUtility), "IsEMP", new Type[] { typeof(Verb) });
-                MethodInfo replacement = AccessTools.Method(typeof(AttackTargetFinder_BestAttackTarget_Patch), nameof(JustReturnFalse), new Type[] { typeof(Verb) });
-
-                if (targetIsEMP == null)
-                {
-                    Log.Error("Could not find VerbUtility.IsEMP MethodInfo");
-                    return instructions; // Safe fallback
-                }
-                if (replacement == null)
-                {
-                    Log.Error("Could not find replacement MethodInfo");
                     return instructions;
                 }
 
