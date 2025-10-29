@@ -62,7 +62,6 @@ namespace BetterGrenadeHandling
                 Debug_ThingID_PositionCache.SavePos(__instance.thingIDNumber, value);
                 #endif
 
-                //Pawn moved_pawn = __instance as Pawn;
                 int moved_pawnID = moved_pawn.thingIDNumber;
                 IntVec3 moved_pawn_pos = value;
 
