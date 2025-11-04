@@ -36,6 +36,12 @@ namespace BetterGrenadeHandling
 
         public static bool TryGetCurrentEffectiveVerb(Thing thing, out Verb verb)
         {
+            if (thing == null)
+            {
+                verb = null;
+                return false;
+            }
+
             bool verbFound = dThing_Verb.TryGetValue(thing, out verb);
 
             if (!verbFound || verb == null)
