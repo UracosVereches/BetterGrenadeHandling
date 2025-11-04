@@ -1,4 +1,4 @@
-# Better Grenade Handling v1.1.0
+# Better Grenade Handling
 
 RimWorld mod that enhances the vanilla AI behavior in combat
 
