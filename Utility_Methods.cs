@@ -1,11 +1,13 @@
 ﻿using LudeonTK;
 using RimWorld;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Unity.Jobs.LowLevel.Unsafe;
 using UnityEngine;
 using Verse;
 using Verse.AI;
+using Verse.AI.Group;
 
 
 namespace BetterGrenadeHandling
@@ -22,7 +24,6 @@ namespace BetterGrenadeHandling
 
         /*
          * Ripped out directly from RimWorld.StunHandler.CanBeStunnedByDamage(DamageDef def) 
-         * TODO: cache. update it every 30 calls or so.
          * This method is very likely to change in future updates */
         // Precache
         private static DamageDef defEMP = DamageDefOf.EMP;
@@ -83,7 +84,6 @@ namespace BetterGrenadeHandling
 
         /*
          * Ripped out directly from RimWorld.ITab_Pawn_Gear.TryDrawOverallArmor(ref float curY, float width, StatDef stat, string label
-         * TODO: Cache results in a list when entry for a pawn is null. If there is an entry, change the result on ApparelChanged only
          * This method is very likely to change in future updates */
         private static float GetOverallArmorRating(this Pawn pawn, StatDef stat)
         {
@@ -113,6 +113,17 @@ namespace BetterGrenadeHandling
             return num;
         }
 
+        // Cache
+        private struct CollateralCacheData
+        {
+            public int lastTick;
+            public bool result;
+        }
+        private static readonly Dictionary<(Pawn, Pawn), CollateralCacheData> IgnoreCollateralCache = new Dictionary<(Pawn, Pawn), CollateralCacheData>();
+        private static readonly int cacheUpdateInterval = 60;
+        private static readonly int totalCacheAnnihilationInterval = 10000; // clear cache to avoid memory leaks
+        private static int lastCacheAnnihilationTick = 0;
+
         /// <summary>
         /// Check if attacker can safely ignore collateral in target's blast radius
         /// </summary>\
@@ -125,10 +136,37 @@ namespace BetterGrenadeHandling
         public static bool CanIgnoreCollateral(this Pawn attacker, Pawn collateral, DamageDef damageDef, bool isIncendiary = false)
         {
             if (BGHConfig.AvoidFriendlyFire == false)
-            {
                 return true;
+
+            int currentTick = Find.TickManager.TicksGame;
+            if (currentTick - lastCacheAnnihilationTick >= totalCacheAnnihilationInterval)
+            {
+                IgnoreCollateralCache.Clear();
+                lastCacheAnnihilationTick = currentTick;
             }
 
+            bool foundInCache = IgnoreCollateralCache.TryGetValue((attacker, collateral), out CollateralCacheData data);
+            if (foundInCache)
+            {
+                if (currentTick - data.lastTick <= cacheUpdateInterval)
+                {
+                    return data.result;
+                }
+            }
+
+            bool result = DoCollateralIgnoreCheck(attacker, collateral, damageDef, isIncendiary);
+
+            CollateralCacheData newData = new CollateralCacheData();
+            newData.lastTick = currentTick;
+            newData.result = result;
+
+            IgnoreCollateralCache.SetOrAdd((attacker, collateral), newData);
+
+            return false;
+        }
+
+        private static bool DoCollateralIgnoreCheck(Pawn attacker, Pawn collateral, DamageDef damageDef, bool isIncendiary = false)
+        {
             if (attacker == null || collateral == null || damageDef == null)
             {
                 return false;
@@ -168,7 +206,7 @@ namespace BetterGrenadeHandling
                 {
                     return true;
                 }
-                    
+
             }
 
             // Ignore if weapon causes stun damage and friendly collateral can't be stunned

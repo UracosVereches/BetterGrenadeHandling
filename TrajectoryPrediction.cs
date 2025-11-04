@@ -8,7 +8,6 @@
 // But that just seems unrealistic in many scenarios
 // Grenades are meant to be thrown at stationary targets anyway.
 // I'll leave this code here for now, maybe someone else can refine it.
-
 /*
 using HarmonyLib;
 using RimWorld;
@@ -57,35 +56,37 @@ namespace BetterGrenadeHandling
 
             IntVec3 launcherPosition = launcher.PositionHeld;
             IntVec3 targetPosition = target.PositionHeld;
-            IntVec3 nextCell = pawnPather.nextCell; 
-            float angle = (nextCell - target.Position).ToVector3().AngleFlat();
+            IntVec3 nextCell = pawnPather.nextCell;
+            double angle = (nextCell - target.Position).ToVector3().AngleFlat();
             // Get appropriate diagonal/cardinal speed for next cell
-            float ticksPerCell = ((nextCell.x != targetPosition.x && nextCell.z != targetPosition.z) ? target.TicksPerMoveDiagonal : target.TicksPerMoveCardinal);
-            float cellsPerTick = 1f / ticksPerCell;
+            double ticksPerCell = ((nextCell.x != targetPosition.x && nextCell.z != targetPosition.z) ? target.TicksPerMoveDiagonal : target.TicksPerMoveCardinal);
+            double cellsPerTick = 1f / ticksPerCell;
 
             IntVec3 direction =  nextCell - targetPosition;
-            Vector3 targetVelocity = direction.ToVector3() * (cellsPerTick);
+            //Vector3 targetVelocity = direction.ToVector3() * (cellsPerTick);
+            double targetVelocity_x = direction.x * (cellsPerTick);
+            double targetVelocity_z = direction.z * (cellsPerTick);
 
-            float distance = IntVec3Utility.DistanceTo(launcherPosition, targetPosition);
-            float projectile_CellsPerTick = explosive.def.projectile.SpeedTilesPerTick;
+            double distance = IntVec3Utility.DistanceTo(launcherPosition, targetPosition);
+            double projectile_CellsPerTick = explosive.def.projectile.SpeedTilesPerTick;
             IntVec3 projectileDisplacement = targetPosition - launcherPosition;
-            Vector3 projectileVelocity = projectileDisplacement.ToVector3() * (projectile_CellsPerTick / distance);
+            //Vector3 projectileVelocity = projectileDisplacement.ToVector3() * (projectile_CellsPerTick / distance);
 
-            float ticksToDetonate = explosive.def.projectile.explosionDelay;
+            int ticksToDetonate = explosive.def.projectile.explosionDelay;
 
-            float tx = targetPosition.x - launcherPosition.x;
-            float tz = targetPosition.z - launcherPosition.z;
-            float tvx = targetVelocity.x;
-            float tvz = targetVelocity.z;
+            double tx = targetPosition.x - launcherPosition.x;
+            double tz = targetPosition.z - launcherPosition.z;
+            double tvx = targetVelocity_x;
+            double tvz = targetVelocity_z;
 
             // Get quadratic equation components
-            float a = tvx * tvx + tvz * tvz - projectile_CellsPerTick * projectile_CellsPerTick;
-            float b = 2 * (tvx * tx + tvz * tz);
-            float c = tx * tx + tz * tz;
+            double a = tvx * tvx + tvz * tvz - projectile_CellsPerTick * projectile_CellsPerTick;
+            double b = 2 * (tvx * tx + tvz * tz);
+            double c = tx * tx + tz * tz;
 
             // Solve quadratic
-            float quad1 = 0f;
-            float quad2 = 0f;
+            double quad1 = 0f;
+            double quad2 = 0f;
             if (Math.Abs(a) < 1e-6)
             {
                 if (Math.Abs(b) < 1e-6)
@@ -114,15 +115,16 @@ namespace BetterGrenadeHandling
                 {
                     disc = Math.Sqrt(disc);
                     a = 2 * a;
-                    quad1 = (-b - (float)disc) / a;
-                    quad2 = (-b + (float)disc) / a;
+                    quad1 = (-b - disc) / a;
+                    quad2 = (-b + disc) / a;
                 }
             }
 
             // Find smallest positive solution
-            float time = Math.Min(quad1, quad2);
+            double time = Math.Min(quad1, quad2);
             if (time < 0) time = Math.Max(quad1, quad2);
-            Vector3 aimPos = targetPosition.ToVector3() + (targetVelocity * (time + ticksToDetonate));
+            Vector3 targetPredictedPos = new Vector3((float)(targetVelocity_x * (time + ticksToDetonate)), 0, (float)(targetVelocity_z * (time + ticksToDetonate)));
+            Vector3 aimPos = targetPosition.ToVector3() + targetPredictedPos;
             IntVec3 intAimPos = new IntVec3((int)Math.Round(aimPos.x), 0, (int)Math.Round(aimPos.z));
 
             // Create new target info
@@ -131,7 +133,7 @@ namespace BetterGrenadeHandling
             usedTarget = newtarget;
 
             Log.Message($"evaluation for target {target.LabelShort}: position {targetPosition}, nextCell {nextCell}, ticksPerCell {ticksPerCell}, direction {direction}, "
-                + $"targetVelocity {targetVelocity}, projectileVelocity {projectileVelocity}, ticksToDetonate {ticksToDetonate}. Result: intAimPos {intAimPos}, time {time}.");
+                + $"targetVelocity ({targetVelocity_x}, {targetVelocity_z}), ticksToDetonate {ticksToDetonate}. Result: intAimPos {intAimPos}, time {time}.");
         }
     }
 }
