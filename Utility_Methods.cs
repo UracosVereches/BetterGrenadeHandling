@@ -141,6 +141,7 @@ namespace BetterGrenadeHandling
             int currentTick = Find.TickManager.TicksGame;
             if (currentTick - lastCacheAnnihilationTick >= totalCacheAnnihilationInterval)
             {
+                Log.Message("annihilation");
                 IgnoreCollateralCache.Clear();
                 lastCacheAnnihilationTick = currentTick;
             }
@@ -148,11 +149,16 @@ namespace BetterGrenadeHandling
             bool foundInCache = IgnoreCollateralCache.TryGetValue((attacker, collateral), out CollateralCacheData data);
             if (foundInCache)
             {
+                Log.Message($"att: {attacker} and col: {collateral} - found in cache");
                 if (currentTick - data.lastTick <= cacheUpdateInterval)
                 {
+                    Log.Message($"result {data.result}");
                     return data.result;
                 }
+                Log.Message($"cache too old");
             }
+
+            Log.Message($"doing check");
 
             bool result = DoCollateralIgnoreCheck(attacker, collateral, damageDef, isIncendiary);
 
@@ -162,7 +168,7 @@ namespace BetterGrenadeHandling
 
             IgnoreCollateralCache.SetOrAdd((attacker, collateral), newData);
 
-            return false;
+            return result;
         }
 
         private static bool DoCollateralIgnoreCheck(Pawn attacker, Pawn collateral, DamageDef damageDef, bool isIncendiary = false)
