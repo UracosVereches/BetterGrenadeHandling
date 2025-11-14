@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<LanguageData>
+
+	<BGH_AvoidFriendlyFire>Избегать дружественного огня</BGH_AvoidFriendlyFire>
+	<BGH_AvoidFriendlyFire_Tip>Не использовать взрывчатку, если в зоне поражения находится хотя бы 1 союзник</BGH_AvoidFriendlyFire_Tip>
+	
+	<BGH_IgnoreConditions>Исключения по типам урона</BGH_IgnoreConditions>
+	<BGH_MinFlammabilityToIgnore>Зажигательное - Минимальная воспламеняемость, которую игнорировать</BGH_MinFlammabilityToIgnore>
+	<BGH_MinFlammabilityToIgnore_Tip>Игнорировать союзников в зоне поражения, если их воспламеняемость меньше установленного порога.\n\nВоспламеняемость - насколько пешке вероятно загореться</BGH_MinFlammabilityToIgnore_Tip>
+	
+	<BGH_MinHeatArmorToIgnore>Зажигательное - Минимальная общая тепловая броня, которую игнорировать</BGH_MinHeatArmorToIgnore>
+	<BGH_MinHeatArmorToIgnore_Tip>Игнорировать союзников в зоне поражения, если их тепловая броня выше установленного порога.\n\nТепловая броня - насколько пешка устойчива к ожогам, когда она уже горит</BGH_MinHeatArmorToIgnore_Tip>
+	
+	<BGH_MinToxicResistanceToIgnore>Токсическое - Минимальная устойчивость к токсичной среде</BGH_MinToxicResistanceToIgnore>
+	<BGH_MinToxicResistanceToIgnore_Tip>Игнорировать союзников в зоне поражения, если их устойчивость выше установленного порога</BGH_MinToxicResistanceToIgnore_Tip>
+
+	<BGH_AvoidExplosives>Обходить взрывчатку</BGH_AvoidExplosives>
+	<BGH_AvoidExplosives_Tip>Обходить взрывчатку, которая была выпущена союзниками</BGH_AvoidExplosives_Tip>
+	<BGH_FleeExplosives>Убегать от взрывчатки</BGH_FleeExplosives>
+	<BGH_FleeExplosives_Tip>Убегать от взрывчатки, когда союзники выпускают её по вам</BGH_FleeExplosives_Tip>
+
+	<BGH_AvoidShells>Обходить миномётные снаряды</BGH_AvoidShells>
+	<BGH_AvoidShells_Tip>Обходить зону поражения миномётного дружественного огня</BGH_AvoidShells_Tip>
+	<BGH_FleeShells>Убегать от миномётных снарядов</BGH_FleeShells>
+	<BGH_FleeShells_Tip>Убегать от миномётных снарядов, выпущенными союзником прямо по вам</BGH_FleeShells_Tip>
+	
+	<BGH_EMPFix>ЭКСПЕРИМЕНТАЛЬНАЯ ОПЦИЯ: Запускать ЭМИ снаряды по пешкам с поясами-щитами (может потребоваться перезапуск)</BGH_EMPFix>
+	<BGH_EMPFix_Tip>Это экспериментальная опция, которая не была протестирована должным образом и может вызывать баги из-за того, что сделано через анус.\nОтключите, если возникнут какие-либо ошибки\n\nПешки с ЭМИ оружием будут автоматически целиться во врагов с поясами-щитами</BGH_EMPFix_Tip>
+	
+	<BGH_TargetScoreFix>ЭКСПЕРИМЕНТАЛЬНАЯ ОПЦИЯ: Стараться запускать взрывчатку в наибольшие скопления врагов</BGH_TargetScoreFix>
+	<BGH_TargetScoreFix_Tip>Это экспериментальная опция, которая не была протестирована должным образом и может вызывать баги.\nОтключите, если возникнут какие-либо ошибки\n\nОтдавать приоритет наиболее плотно сгруппированным противникам, чтобы повысить урон от взрывчатки через внутриигровую систему счёта целей</BGH_TargetScoreFix_Tip>
+
+</LanguageData>

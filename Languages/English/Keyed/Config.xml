@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<LanguageData>
+
+	<BGH_AvoidFriendlyFire>Avoid friendly fire</BGH_AvoidFriendlyFire>
+	<BGH_AvoidFriendlyFire_Tip>Avoid launching explosives if there is at least 1 ally in blast radius</BGH_AvoidFriendlyFire_Tip>
+	
+	<BGH_IgnoreConditions>Ignore conditions for damage types</BGH_IgnoreConditions>
+	<BGH_MinFlammabilityToIgnore>Incendiary - Minimum flammability to ignore</BGH_MinFlammabilityToIgnore>
+	<BGH_MinFlammabilityToIgnore_Tip>Ignore allies in the blast area if their flammability is below the threshold.\n\nFlammability - how likely you are to catch on fire</BGH_MinFlammabilityToIgnore_Tip>
+	
+	<BGH_MinHeatArmorToIgnore>Incendiary - Minimum overall heat armor to ignore</BGH_MinHeatArmorToIgnore>
+	<BGH_MinHeatArmorToIgnore_Tip>Ignore allies in the blast area if their overall heat armor is above the threshold.\n\nHeat armor - how resistant you are to burn when you catch on fire</BGH_MinHeatArmorToIgnore_Tip>
+	
+	<BGH_MinToxicResistanceToIgnore>Toxic - Minimum toxic environment resistance to ignore</BGH_MinToxicResistanceToIgnore>
+	<BGH_MinToxicResistanceToIgnore_Tip>Ignore allies in the blast area if their resistance is above the threshold</BGH_MinToxicResistanceToIgnore_Tip>
+
+	<BGH_AvoidExplosives>Avoid explosives</BGH_AvoidExplosives>
+	<BGH_AvoidExplosives_Tip>Avoid traversing over explosives launched by friendlies</BGH_AvoidExplosives_Tip>
+	<BGH_FleeExplosives>Flee from explosives</BGH_FleeExplosives>
+	<BGH_FleeExplosives_Tip>Flee from explosives when launched at you by friendlies</BGH_FleeExplosives_Tip>
+
+	<BGH_AvoidShells>Avoid shells</BGH_AvoidShells>
+	<BGH_AvoidShells_Tip>Avoid crossing areas where friendly shells are about to land or already present</BGH_AvoidShells_Tip>
+	<BGH_FleeShells>Flee from shells</BGH_FleeShells>
+	<BGH_FleeShells_Tip>Flee from shells when launched at you by friendlies</BGH_FleeShells_Tip>
+	
+	<BGH_EMPFix>EXPERIMENTAL: Launch EMP at shield-belt enemies (may require restarting)</BGH_EMPFix>
+	<BGH_EMPFix_Tip>This is an experimental feature that hasn't been thoroughly tested and may introduce bugs due to half-assed implementation.\nDisable it if you encounter any issues\n\nPawns equipped with EMP weapons will automatically target enemies wearing shield-belts</BGH_EMPFix_Tip>
+	
+	<BGH_TargetScoreFix>EXPERIMENTAL: Target tight enemy groups with explosives</BGH_TargetScoreFix>
+	<BGH_TargetScoreFix_Tip>This is an experimental feature that hasn't been thoroughly tested and may introduce bugs\nDisable it if you encounter any issues\n\nPrioritize tightly grouped enemies to maximize explosive damage through in-game target score system</BGH_TargetScoreFix_Tip>
+
+</LanguageData>

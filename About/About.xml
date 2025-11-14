@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<ModMetaData>
+	<name>Better Grenade Handling</name>
+	<author>UracosVereches</author>
+   	<packageId>UracosVereches.bettergrenadehandling</packageId>
+	<modVersion IgnoreIfNoMatchingField="True">1.1.2</modVersion>
+	<supportedVersions>
+        <li>1.6</li>
+	</supportedVersions>
+	<description>
+Better, smarter grenade handling mod
+	</description>
+	<modDependencies>
+		<li>
+			<packageId>brrainz.harmony</packageId>
+			<displayName>Harmony</displayName>
+			<steamWorkshopUrl>steam://url/CommunityFilePage/2009463077</steamWorkshopUrl>
+			<downloadUrl>https://github.com/pardeike/HarmonyRimWorld/releases/latest</downloadUrl>
+		</li>
+	</modDependencies>
+</ModMetaData>
