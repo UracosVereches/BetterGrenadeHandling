@@ -18,7 +18,7 @@ namespace BetterGrenadeHandling
             var harmony = new Harmony(PACKAGE_ID);
             harmony.PatchAll();
 
-            string consoleMsg = $"[{PACKAGE_NAME}] Loaded.";
+            string consoleMsg = $"[{PACKAGE_NAME}] Loaded v{base.Content?.ModMetaData?.ModVersion}.";
 
             #if DEBUG
             consoleMsg = consoleMsg + " Debug build.";

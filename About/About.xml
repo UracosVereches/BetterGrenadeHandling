@@ -4,7 +4,7 @@
 	<name>Better Grenade Handling</name>
 	<author>UracosVereches</author>
    	<packageId>UracosVereches.bettergrenadehandling</packageId>
-	<modVersion IgnoreIfNoMatchingField="True">1.1.2</modVersion>
+	<modVersion IgnoreIfNoMatchingField="True">1.1.3</modVersion>
 	<supportedVersions>
         <li>1.6</li>
 	</supportedVersions>
