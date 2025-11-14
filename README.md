@@ -2,8 +2,6 @@
 
 RimWorld mod that enhances the vanilla AI behavior in combat
 
-🚧 **This is WIP.** If you have a better approach - pull requests and suggestions are highly welcome.
-If you encounter any issues, bugs or performance drops - let me know.
 ## Features
 
 - Pawns will avoid launching an explosive if there is at least 1 ally in blast radius + forced miss radius, including friendly factions/caravans too.
@@ -29,3 +27,5 @@ For non-steam users:
 
 ## For modders
 Building in Debug mode enables helpful on-screen UI that visualizes code in real time
+If you have a better approach - pull requests and suggestions are highly welcome.
+If you encounter any issues, bugs or performance drops - let me know.
