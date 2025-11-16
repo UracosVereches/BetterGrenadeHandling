@@ -27,5 +27,7 @@ For non-steam users:
 
 ## For modders
 Building in Debug mode enables helpful on-screen UI that visualizes code in real time
+
 If you have a better approach - pull requests and suggestions are highly welcome.
+
 If you encounter any issues, bugs or performance drops - let me know.
